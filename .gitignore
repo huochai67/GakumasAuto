@@ -1,0 +1,46 @@
+# secrets / machine-local
+.env
+.mcp.json
+Directory.Build.props
+
+# build
+**/bin/
+**/obj/
+*.user
+*.suo
+.vs/
+.idea/
+TestResults/
+*.trx
+*.coverage
+
+# local scratch
+_tmp_decompile/
+tools/interop-gen/out-static/
+tools/ga-static-decrypt/out/
+tools/ga-static-decrypt/profile/
+*.bak
+*.log
+
+# private BepInEx deployment snapshot — install BepInEx from its official release
+gakumas-bepinex-kit/game-root/
+gakumas-bepinex-kit/BepInEx/core/
+gakumas-bepinex-kit/BepInEx/config/BepInEx.cfg
+# game-derived assemblies and locally built plugin
+gakumas-bepinex-kit/BepInEx/interop/
+gakumas-bepinex-kit/BepInEx/unity-libs/
+gakumas-bepinex-kit/BepInEx/plugins/*.dll
+gakumas-bepinex-kit/BepInEx/plugins/*.pdb
+**/MethodAddressToToken.db
+**/MethodXrefScanCache.db
+
+# analysis outputs
+*.dump
+*.dmp
+*.exports.txt
+
+# runtime channel files if ever copied here
+gakumas-ui-cmd.json
+gakumas-ui-resp.json
+gakumas-screen.png
+*.done.json

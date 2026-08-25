@@ -1,0 +1,92 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>net6.0</TargetFramework>
+    <ImplicitUsings>disable</ImplicitUsings>
+    <Nullable>disable</Nullable>
+    <AssemblyName>GakumasAuto</AssemblyName>
+    <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
+    <LangVersion>10.0</LangVersion>
+    <GakumasRoot Condition="'$(GakumasRoot)' == ''">$(GAKUMAS_ROOT)</GakumasRoot>
+    <GakumasRoot Condition="'$(GakumasRoot)' == ''">E:\DMM\gakumas</GakumasRoot>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <Reference Include="BepInEx.Core">
+      <HintPath>$(GakumasRoot)\BepInEx\core\BepInEx.Core.dll</HintPath>
+    </Reference>
+    <Reference Include="BepInEx.Unity.IL2CPP">
+      <HintPath>$(GakumasRoot)\BepInEx\core\BepInEx.Unity.IL2CPP.dll</HintPath>
+    </Reference>
+    <Reference Include="Il2CppInterop.Runtime">
+      <HintPath>$(GakumasRoot)\BepInEx\core\Il2CppInterop.Runtime.dll</HintPath>
+    </Reference>
+    <Reference Include="Il2CppInterop.Common">
+      <HintPath>$(GakumasRoot)\BepInEx\core\Il2CppInterop.Common.dll</HintPath>
+    </Reference>
+    <Reference Include="Il2Cppmscorlib">
+      <HintPath>$(GakumasRoot)\BepInEx\interop\Il2Cppmscorlib.dll</HintPath>
+    </Reference>
+    <Reference Include="UnityEngine.CoreModule">
+      <HintPath>$(GakumasRoot)\BepInEx\interop\UnityEngine.CoreModule.dll</HintPath>
+    </Reference>
+    <Reference Include="UnityEngine.InputLegacyModule">
+      <HintPath>$(GakumasRoot)\BepInEx\interop\UnityEngine.InputLegacyModule.dll</HintPath>
+    </Reference>
+    <Reference Include="UnityEngine.IMGUIModule">
+      <HintPath>$(GakumasRoot)\BepInEx\interop\UnityEngine.IMGUIModule.dll</HintPath>
+    </Reference>
+    <Reference Include="UnityEngine.TextRenderingModule">
+      <HintPath>$(GakumasRoot)\BepInEx\interop\UnityEngine.TextRenderingModule.dll</HintPath>
+    </Reference>
+    <Reference Include="UnityEngine.UIModule">
+      <HintPath>$(GakumasRoot)\BepInEx\interop\UnityEngine.UIModule.dll</HintPath>
+    </Reference>
+    <Reference Include="UnityEngine.UI">
+      <HintPath>$(GakumasRoot)\BepInEx\interop\UnityEngine.UI.dll</HintPath>
+    </Reference>
+    <Reference Include="Unity.TextMeshPro">
+      <HintPath>$(GakumasRoot)\BepInEx\interop\Unity.TextMeshPro.dll</HintPath>
+    </Reference>
+    <Reference Include="UnityEngine.ScreenCaptureModule">
+      <HintPath>$(GakumasRoot)\BepInEx\interop\UnityEngine.ScreenCaptureModule.dll</HintPath>
+    </Reference>
+    <Reference Include="UnityEngine.ImageConversionModule">
+      <HintPath>$(GakumasRoot)\BepInEx\interop\UnityEngine.ImageConversionModule.dll</HintPath>
+    </Reference>
+    <Reference Include="Assembly-CSharp">
+      <HintPath>$(GakumasRoot)\BepInEx\interop\Assembly-CSharp.dll</HintPath>
+    </Reference>
+    <Reference Include="campus-submodule.Runtime">
+      <HintPath>$(GakumasRoot)\BepInEx\interop\campus-submodule.Runtime.dll</HintPath>
+    </Reference>
+    <Reference Include="Qua.Utility">
+      <HintPath>$(GakumasRoot)\BepInEx\interop\Qua.Utility.dll</HintPath>
+    </Reference>
+    <Reference Include="ADV.Runtime">
+      <HintPath>$(GakumasRoot)\BepInEx\interop\ADV.Runtime.dll</HintPath>
+    </Reference>
+    <Reference Include="Uguiss.Runtime">
+      <HintPath>$(GakumasRoot)\BepInEx\interop\Uguiss.Runtime.dll</HintPath>
+    </Reference>
+    <Reference Include="Uguiss-Timeline.Runtime">
+      <HintPath>$(GakumasRoot)\BepInEx\interop\Uguiss-Timeline.Runtime.dll</HintPath>
+    </Reference>
+    <Reference Include="quaunity-ui.Runtime">
+      <HintPath>$(GakumasRoot)\BepInEx\interop\quaunity-ui.Runtime.dll</HintPath>
+    </Reference>
+    <Reference Include="quaunity-userdata-manager.Runtime">
+      <HintPath>$(GakumasRoot)\BepInEx\interop\quaunity-userdata-manager.Runtime.dll</HintPath>
+    </Reference>
+    <Reference Include="quaunity-master-manager.Runtime">
+      <HintPath>$(GakumasRoot)\BepInEx\interop\quaunity-master-manager.Runtime.dll</HintPath>
+    </Reference>
+    <Reference Include="Google.Protobuf">
+      <HintPath>$(GakumasRoot)\BepInEx\interop\Google.Protobuf.dll</HintPath>
+    </Reference>
+    <Reference Include="Microsoft.Extensions.Logging.Abstractions">
+      <HintPath>$(GakumasRoot)\dotnet\Microsoft.Extensions.Logging.Abstractions.dll</HintPath>
+    </Reference>
+  </ItemGroup>
+
+</Project>

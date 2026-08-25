@@ -1,0 +1,6 @@
+<Project>
+  <PropertyGroup>
+    <!-- Copy to Directory.Build.props and point at your game install. -->
+    <GakumasRoot>E:\DMM\gakumas</GakumasRoot>
+  </PropertyGroup>
+</Project>

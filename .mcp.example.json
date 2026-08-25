@@ -1,0 +1,12 @@
+{
+  "mcpServers": {
+    "gakumas": {
+      "type": "stdio",
+      "command": "node",
+      "args": ["mcp/server.js"],
+      "env": {
+        "GAKUMAS_BEPINEX": "E:/DMM/gakumas/BepInEx"
+      }
+    }
+  }
+}
