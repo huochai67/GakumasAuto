@@ -14,7 +14,7 @@ using BepInEx.Unity.IL2CPP;
 
 namespace GakumasAuto
 {
-    [BepInPlugin("dev.gakumas.auto", "Gakumas Auto", "2.2.1")]
+    [BepInPlugin("dev.gakumas.auto", "Gakumas Auto", "2.3.0")]
     public class GakumasAutoPlugin : BasePlugin
     {
         internal static ManualLogSource SharedLog;
@@ -38,13 +38,17 @@ namespace GakumasAuto
         internal static ProduceShopListDto SharedProduceShop;
         internal static ProduceOutingDto SharedProduceOuting;
         internal static ProduceCardListDto SharedProduceCards;
+        internal static ClubStateDto SharedClubState;
+        internal static CapsuleListDto SharedCapsuleList;
+        internal static SupportCardListDto SharedSupportCards;
+        internal static ExchangeProductListDto SharedExchangeItems;
         internal static List<LayoutNodeDto> SharedNodes;
         internal static List<FindMatchDto> SharedFindMatches;
 
         public override void Load()
         {
             SharedLog = Log;
-            Log.LogInfo("GakumasAuto v2.2.1 loaded. F8/F9 = ADV, F10 = layout capture");
+            Log.LogInfo("GakumasAuto v2.3.0 loaded. F8/F9 = ADV, F10 = layout capture");
             Log.LogInfo("Command channel: <BepInEx>\\gakumas-ui-cmd.json");
 
             try

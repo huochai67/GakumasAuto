@@ -208,6 +208,7 @@ namespace GakumasAuto
         public bool isBusy { get; set; }
         public bool isInitialized { get; set; }
         public int selectCardIndex { get; set; }
+        public int recommendIndex { get; set; }
         public int currentPlayerSequenceIndex { get; set; }
         public string statusType { get; set; }
         public ExamCardDto playingCard { get; set; }
@@ -408,6 +409,91 @@ namespace GakumasAuto
         public bool inProgress { get; set; }
         public int currentStepNumber { get; set; }
         public List<ProduceScheduleDto> days { get; set; }
+        public string error { get; set; }
+    }
+
+    internal class ClubStateDto
+    {
+        public bool screenOpen { get; set; }
+        public bool inGuild { get; set; }
+        public string guildId { get; set; }
+        public string guildName { get; set; }
+        public string requestState { get; set; }
+        public bool canRequest { get; set; }
+        public bool canReceive { get; set; }
+        public string requestedItemId { get; set; }
+        public string requestedItemName { get; set; }
+        public int remainDonationCount { get; set; }
+        public int maxDonationCount { get; set; }
+        public string donationState { get; set; }
+        public int memberCount { get; set; }
+        public List<string> members { get; set; }
+        public string error { get; set; }
+    }
+
+    internal class CapsuleDto
+    {
+        public string id { get; set; }
+        public string name { get; set; }
+        public string type { get; set; }
+        public string kind { get; set; }
+        public bool locked { get; set; }
+        public bool noti { get; set; }
+        public string consumption { get; set; }
+        public int consumptionQuantity { get; set; }
+        public int maxDraw { get; set; }
+        public int totalDrawCount { get; set; }
+    }
+
+    internal class CapsuleListDto
+    {
+        public bool screenOpen { get; set; }
+        public List<CapsuleDto> gashas { get; set; }
+        public string error { get; set; }
+    }
+
+    internal class SupportCardDto
+    {
+        public string id { get; set; }
+        public string name { get; set; }
+        public int level { get; set; }
+        public int levelLimit { get; set; }
+        public int stock { get; set; }
+        public string planType { get; set; }
+        public int rarity { get; set; }
+    }
+
+    internal class SupportCardListDto
+    {
+        public int count { get; set; }
+        public List<SupportCardDto> cards { get; set; }
+        public string error { get; set; }
+    }
+
+    internal class ExchangeProductDto
+    {
+        public string id { get; set; }
+        public string name { get; set; }
+        public bool recommend { get; set; }
+        public bool unlocked { get; set; }
+        public int exchangeLimit { get; set; }
+        public int exchangedCount { get; set; }
+        public int price { get; set; }
+        public string consumptionResource { get; set; }
+        public string rewardType { get; set; }
+        public string rewardId { get; set; }
+        public long rewardQuantity { get; set; }
+        public int order { get; set; }
+    }
+
+    internal class ExchangeProductListDto
+    {
+        public bool listScreenOpen { get; set; }
+        public string currentId { get; set; }
+        public string currentName { get; set; }
+        public bool manualResettable { get; set; }
+        public int resetCount { get; set; }
+        public List<ExchangeProductDto> items { get; set; }
         public string error { get; set; }
     }
 }

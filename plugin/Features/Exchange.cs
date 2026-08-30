@@ -163,5 +163,91 @@ namespace GakumasAuto
                 return "exchange_enter failed: " + e.Message;
             }
         }
+
+        private void FillExchangeProducts(Campus.Common.Proto.Client.Api.ExchangeInfo info, ExchangeProductListDto dto)
+        {
+            if (info == null) return;
+            dto.currentId = info.Id ?? dto.currentId;
+            dto.currentName = info.Name ?? "";
+            dto.manualResettable = info.ManualResettable;
+            dto.resetCount = info.ResetCount;
+            var items = info.Items;
+            if (items == null) return;
+            for (int i = 0; i < 200; i++)
+            {
+                Campus.Common.Proto.Client.Api.ExchangeItem it = null;
+                try { it = items[i]; } catch { break; }
+                if (it == null) break;
+                var d = new ExchangeProductDto
+                {
+                    id = it.Id ?? "",
+                    name = it.Name ?? "",
+                    recommend = it.IsShowRecommendLabel,
+                    unlocked = it.Unlocked,
+                    exchangeLimit = it.ExchangeLimit,
+                    exchangedCount = it.ExchangedCount,
+                    price = 0,
+                    consumptionResource = "",
+                    rewardType = "",
+                    rewardId = "",
+                    rewardQuantity = 0,
+                    order = it.Order
+                };
+                try
+                {
+                    d.price = it.GetCurrentConsumptionResourceQuantity();
+                    d.consumptionResource = info.ConsumptionResourceType + ":" + (info.ConsumptionResourceId ?? "");
+                }
+                catch { }
+                try
+                {
+                    d.rewardType = it.ResourceType.ToString();
+                    d.rewardId = it.ResourceId ?? "";
+                    d.rewardQuantity = it.Quantity;
+                }
+                catch { }
+                dto.items.Add(d);
+            }
+        }
+
+        private void BuildExchangeItems()
+        {
+            var dto = new ExchangeProductListDto
+            {
+                listScreenOpen = false,
+                currentId = "",
+                currentName = "",
+                manualResettable = false,
+                resetCount = 0,
+                items = new List<ExchangeProductDto>(),
+                error = ""
+            };
+            try
+            {
+                var daily = UnityEngine.Object.FindObjectsOfType<Campus.OutGame.ExchangeDailyListScreenPresenter>();
+                if (daily != null && daily.Length > 0 && daily[0]._model != null)
+                {
+                    dto.listScreenOpen = true;
+                    FillExchangeProducts(daily[0]._model.CurrentExchangeInfo, dto);
+                }
+
+                var itemList = UnityEngine.Object.FindObjectsOfType<Campus.OutGame.ExchangeItemListScreenPresenter>();
+                if (itemList != null && itemList.Length > 0 && itemList[0]._model != null)
+                {
+                    dto.listScreenOpen = true;
+                    FillExchangeProducts(itemList[0]._model.CurrentExchangeInfo, dto);
+                }
+
+                if (!dto.listScreenOpen)
+                    dto.error = "exchange list screen not open (call exchange_enter first)";
+                else if (dto.items.Count == 0)
+                    dto.error = "no items on current exchange tab";
+            }
+            catch (Exception e)
+            {
+                dto.error = "exchange items failed: " + e.Message;
+            }
+            GakumasAutoPlugin.SharedExchangeItems = dto;
+        }
     }
 }

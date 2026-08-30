@@ -24,7 +24,7 @@ const readline = require("readline");
 
 const PROTOCOL_VERSION = "2024-11-05";
 const SERVER_NAME = "gakumas-mcp";
-const SERVER_VERSION = "0.4.0";
+const SERVER_VERSION = "0.5.0";
 
 const BEPINEX = (process.env.GAKUMAS_BEPINEX || "E:/DMM/gakumas/BepInEx").replace(/[\\/]+$/, "");
 // Override with GAKUMAS_BEPINEX. The E:/DMM/... default is the common DMM install path, not a secret.
@@ -741,6 +741,109 @@ async function toolExamStart() {
     return { status: "started", skipResult: res, state: e2 };
 }
 
+async function waitPluginOpen(action, pred, enterAction, enterExtra = {}, timeoutMs = 15000) {
+    let s = await sendCommand(action);
+    if (pred(s)) return s;
+    await sendCommand(enterAction, enterExtra);
+    const deadline = Date.now() + timeoutMs;
+    let retried = false;
+    while (Date.now() < deadline) {
+        await sleep(800);
+        s = await sendCommand(action);
+        if (pred(s)) return s;
+        const err = s && s.error ? String(s.error) : "";
+        if (!retried && err.indexOf("loading") >= 0) {
+            retried = true;
+            await sendCommand(enterAction, enterExtra);
+        }
+    }
+    return s;
+}
+
+async function toolClubState() {
+    return waitPluginOpen("club_state", (s) => s && s.screenOpen && !s.error, "club_enter");
+}
+async function toolClubEnter() { return sendCommand("club_enter"); }
+async function toolClubReceive() { return sendCommand("club_receive"); }
+async function toolClubRequest(args) {
+    if (args.confirm !== true) throw err("CONFIRM_REQUIRED", "club_request requires confirm:true");
+    return sendCommand("club_request");
+}
+async function toolClubDonate(args) {
+    if (args.confirm !== true) throw err("CONFIRM_REQUIRED", "club_donate requires confirm:true");
+    return sendCommand("club_donate");
+}
+
+async function toolCapsuleState() {
+    return waitPluginOpen("capsule_state", (s) => s && s.screenOpen && !s.error, "capsule_enter");
+}
+async function toolCapsuleEnter() { return sendCommand("capsule_enter"); }
+async function toolCapsuleDraw(args) {
+    if (args.confirm !== true) throw err("CONFIRM_REQUIRED", "capsule_draw requires confirm:true — draws spend coins");
+    return sendCommand("capsule_draw", { kind: String(args.kind || ""), confirm: true });
+}
+
+async function toolSupportList() { return sendCommand("support_list"); }
+async function toolSupportEnter() { return sendCommand("support_enter"); }
+async function toolSupportUpgrade(args) {
+    if (args.confirm !== true) throw err("CONFIRM_REQUIRED", "support_upgrade requires confirm:true");
+    return sendCommand("support_upgrade", { confirm: true });
+}
+
+async function toolExchangeItems() {
+    return waitPluginOpen("exchange_items", (s) => s && s.listScreenOpen, "exchange_enter", { type: "daily" });
+}
+
+async function toolExchangeBuy(args) {
+    if (args.confirm !== true) throw err("CONFIRM_REQUIRED", "exchange_buy requires confirm:true — spends money/AP");
+    let s = await sendCommand("exchange_items");
+    if (!s || !s.listScreenOpen) {
+        await sendCommand("exchange_enter", { type: String(args.type || "daily") });
+        await sleep(1500);
+        s = await sendCommand("exchange_items");
+    }
+    const items = (s && s.items) || [];
+    const q = args.item_id ? String(args.item_id) : (args.name ? String(args.name) : "");
+    if (!q) throw new Error("exchange_buy needs item_id or name");
+    const idx = items.findIndex((it) => it.id === q || (it.name && it.name.includes(q)));
+    if (idx < 0) throw new Error(`exchange item not found: "${q}" (${items.length} visible)`);
+    const item = items[idx];
+    if (!item.unlocked) throw err("LOCKED", `item ${item.id} ${item.name} is locked`);
+    if (item.exchangeLimit > 0 && item.exchangedCount >= item.exchangeLimit) throw err("LIMIT_REACHED", `item ${item.id} limit reached`);
+
+    const lay = await readLayout();
+    const cells = (lay.nodes || []).filter((n) =>
+        n.active &&
+        (n.name.includes("ExchangeItemMixGridListCell") ||
+            n.name.includes("ExchangeProductMenuListCell") ||
+            n.name.includes("ShopProductMenuListCell") ||
+            n.name.includes("ProductMenuListCell")) &&
+        !(n.path || "").includes("SizeCacheRoot")
+    );
+    if (!cells.length) throw err("EXCHANGE_CELLS_NOT_FOUND", "exchange product cells not found");
+    const cell = cells[Math.min(idx, cells.length - 1)];
+    await sendCommand("tap_at", { x: cell.sx, y: cell.sy });
+    const sheet = await waitForNode(
+        (n) => n.active && (n.name.includes("Confirm") || n.name.includes("Sheet")),
+        15000, "exchange confirm sheet"
+    );
+    const lay2 = await readLayout();
+    const exec = (lay2.nodes || []).find((n) => n.active && n.name === "ExecuteButton");
+    if (!exec) throw err("BUY_BUTTON_NOT_FOUND", `confirm button not found on ${sheet && sheet.name}`);
+    await sendCommand("invoke_callback", { path: exec.path });
+    await sleep(2000);
+    return { status: "purchased", item: { id: item.id, name: item.name, price: item.price } };
+}
+
+async function toolExamPlay(args) {
+    const idx = args.index == null ? -1 : Number(args.index);
+    return sendCommand("exam_play", { index: idx });
+}
+
+async function toolPvpAutoSet() {
+    return sendCommand("pvp_auto_set");
+}
+
 
 // ---------------- tools ----------------
 
@@ -1089,6 +1192,112 @@ const TOOLS = [
             required: ["rival", "confirm"],
         },
     },
+    {
+        name: "pvp_auto_set",
+        description: "[L3] Open PvP unit edit and press the auto-set formation button (未编成时自动编成).",
+        inputSchema: { type: "object", properties: {} },
+    },
+    {
+        name: "club_state",
+        description: "[L2] Guild/club top: request state (CanRequest/Requesting/RequestingAndCanReceive), donation remaining, members. Opens GuildTop if needed.",
+        inputSchema: { type: "object", properties: {} },
+    },
+    {
+        name: "club_enter",
+        description: "[L3] Open GuildTop (社团).",
+        inputSchema: { type: "object", properties: {} },
+    },
+    {
+        name: "club_receive",
+        description: "[L3] Claim guild note-request reward if receivable.",
+        inputSchema: { type: "object", properties: {} },
+    },
+    {
+        name: "club_request",
+        description: "[L3] Start a new guild note request. Requires confirm:true. After this, pick the note in UI (layout/find) and confirm.",
+        inputSchema: {
+            type: "object",
+            properties: { confirm: { type: "boolean", description: "true required" } },
+            required: ["confirm"],
+        },
+    },
+    {
+        name: "club_donate",
+        description: "[L3] Donate/send gift to the current guild request, then advance to the next member. Requires confirm:true.",
+        inputSchema: {
+            type: "object",
+            properties: { confirm: { type: "boolean", description: "true required" } },
+            required: ["confirm"],
+        },
+    },
+    {
+        name: "capsule_state",
+        description: "[L2] Coin gasha (扭蛋机) list: kind=friend|sense|logic|anomaly, lock, consumption. Opens CoinGashaTop if needed.",
+        inputSchema: { type: "object", properties: {} },
+    },
+    {
+        name: "capsule_enter",
+        description: "[L3] Open CoinGashaTop (コインガシャ).",
+        inputSchema: { type: "object", properties: {} },
+    },
+    {
+        name: "capsule_draw",
+        description: "[L3] Open the draw sheet for a coin gasha kind. Requires confirm:true. Then set count and press ExecuteButton.",
+        inputSchema: {
+            type: "object",
+            properties: {
+                kind: { type: "string", enum: ["friend", "sense", "logic", "anomaly"] },
+                confirm: { type: "boolean", description: "true required — spends coins" },
+            },
+            required: ["kind", "confirm"],
+        },
+    },
+    {
+        name: "support_list",
+        description: "[L2] Owned support cards (id/name/level/limit). Reads UserSupportCardList; no UI required.",
+        inputSchema: { type: "object", properties: {} },
+    },
+    {
+        name: "support_enter",
+        description: "[L3] Open CardSupportCardList.",
+        inputSchema: { type: "object", properties: {} },
+    },
+    {
+        name: "support_upgrade",
+        description: "[L3] Upgrade the lowest-level support card by one. Requires confirm:true. May need a retry after the detail screen opens.",
+        inputSchema: {
+            type: "object",
+            properties: { confirm: { type: "boolean", description: "true required" } },
+            required: ["confirm"],
+        },
+    },
+    {
+        name: "exchange_items",
+        description: "[L2] Items on the current daily/item exchange tab (name, price, exchangedCount, recommend). Opens daily exchange if needed.",
+        inputSchema: { type: "object", properties: {} },
+    },
+    {
+        name: "exchange_buy",
+        description: "[L3] Buy an exchange item by id or name. Requires confirm:true.",
+        inputSchema: {
+            type: "object",
+            properties: {
+                item_id: { type: "string" },
+                name: { type: "string", description: "Name substring" },
+                type: { type: "string", enum: ["daily", "item"], description: "default daily" },
+                confirm: { type: "boolean", description: "true required" },
+            },
+            required: ["confirm"],
+        },
+    },
+    {
+        name: "exam_play",
+        description: "[L3] Play a hand card by index. Omit index to play the game's recommended card (GetNextPlayHandIndex).",
+        inputSchema: {
+            type: "object",
+            properties: { index: { type: "number", description: "Hand index; omit or -1 = recommend" } },
+        },
+    },
 ];
 
 async function toolState() {
@@ -1246,6 +1455,21 @@ const TOOL_IMPL = {
     produce_outing: toolProduceOuting,
     produce_cards: toolProduceCards,
     pvp_challenge: toolPvpChallenge,
+    pvp_auto_set: toolPvpAutoSet,
+    club_state: toolClubState,
+    club_enter: toolClubEnter,
+    club_receive: toolClubReceive,
+    club_request: toolClubRequest,
+    club_donate: toolClubDonate,
+    capsule_state: toolCapsuleState,
+    capsule_enter: toolCapsuleEnter,
+    capsule_draw: toolCapsuleDraw,
+    support_list: toolSupportList,
+    support_enter: toolSupportEnter,
+    support_upgrade: toolSupportUpgrade,
+    exchange_items: toolExchangeItems,
+    exchange_buy: toolExchangeBuy,
+    exam_play: toolExamPlay,
 };
 
 // ---------------- resources ----------------

@@ -55,6 +55,7 @@ namespace GakumasAuto
                 isBusy = false,
                 isInitialized = false,
                 selectCardIndex = -1,
+                recommendIndex = -1,
                 currentPlayerSequenceIndex = -1,
                 statusType = "",
                 playingCard = null,
@@ -87,6 +88,8 @@ namespace GakumasAuto
                         dto.isBusy = model.IsBusy;
                         dto.isInitialized = model.IsInitialized;
                         dto.statusType = model.StatusType.ToString();
+                        try { dto.recommendIndex = model.GetNextPlayHandIndex(model.SelectCardIndex); }
+                        catch { dto.recommendIndex = -1; }
                     }
 
                     var store = p.DataStore;
@@ -145,6 +148,126 @@ namespace GakumasAuto
             catch (Exception e)
             {
                 return "exam start failed: " + e.Message;
+            }
+        }
+
+        private object ExamPlay(int index)
+        {
+            try
+            {
+                var presenters = UnityEngine.Object.FindObjectsOfType<Campus.InGame.Exam.ExamScreenPresenter>();
+                if (presenters == null || presenters.Length == 0)
+                    return "EXAM_NOT_ACTIVE: no exam screen";
+                var p = presenters[0];
+                var model = p.Model;
+                if (model != null && model.IsBusy)
+                    return "BUSY: exam is resolving an action";
+
+                int handCount = 0;
+                try
+                {
+                    var store = p.DataStore;
+                    if (store != null && store.HandList != null)
+                    {
+                        for (int i = 0; i < 20; i++)
+                        {
+                            try { if (store.HandList[i] == null) break; handCount++; }
+                            catch { break; }
+                        }
+                    }
+                }
+                catch { }
+
+                if (index < 0)
+                {
+                    if (model != null)
+                    {
+                        try { index = model.GetNextPlayHandIndex(model.SelectCardIndex); }
+                        catch { index = -1; }
+                    }
+                    if (index < 0) index = 0;
+                }
+                if (handCount > 0 && index >= handCount)
+                    return "bad hand index " + index + " (hand=" + handCount + ")";
+
+                const System.Reflection.BindingFlags flags =
+                    System.Reflection.BindingFlags.Instance |
+                    System.Reflection.BindingFlags.Public |
+                    System.Reflection.BindingFlags.NonPublic;
+                System.Reflection.MethodInfo play = null;
+                var methods = p.GetType().GetMethods(flags);
+                for (int mi = 0; mi < methods.Length; mi++)
+                {
+                    if (methods[mi].Name == "UseHandCardAsync")
+                    {
+                        play = methods[mi];
+                        break;
+                    }
+                }
+                if (play == null) return "UseHandCardAsync not found";
+                try
+                {
+                    var pars = play.GetParameters();
+                    object[] args;
+                    if (pars.Length == 1)
+                        args = new object[] { index };
+                    else if (pars.Length >= 2)
+                    {
+                        object token;
+                        try
+                        {
+                            var cts = new Il2CppSystem.Threading.CancellationTokenSource();
+                            token = cts.Token;
+                        }
+                        catch
+                        {
+                            token = Il2CppSystem.Threading.CancellationToken.None;
+                        }
+                        args = new object[] { index, token };
+                    }
+                    else
+                        return "UseHandCardAsync unexpected arity " + pars.Length;
+                    play.Invoke(p, args);
+                }
+                catch (System.Reflection.TargetInvocationException te)
+                {
+                    var inner = te.InnerException != null ? te.InnerException.ToString() : te.Message;
+                    return "exam_play failed: " + inner;
+                }
+                return "played hand index " + index + " (hand=" + handCount + ")";
+            }
+            catch (Exception e)
+            {
+                return "exam_play failed: " + e.Message;
+            }
+        }
+
+        private object ExamSkipEnd()
+        {
+            try
+            {
+                var presenters = UnityEngine.Object.FindObjectsOfType<Campus.InGame.Exam.ExamScreenPresenter>();
+                if (presenters == null || presenters.Length == 0)
+                    return "EXAM_NOT_ACTIVE: no exam screen";
+                var p = presenters[0];
+                const System.Reflection.BindingFlags flags =
+                    System.Reflection.BindingFlags.Instance |
+                    System.Reflection.BindingFlags.Public |
+                    System.Reflection.BindingFlags.NonPublic;
+                var methods = p.GetType().GetMethods(flags);
+                for (int mi = 0; mi < methods.Length; mi++)
+                {
+                    if (methods[mi].Name == "SkipExamEnd" || methods[mi].Name == "OnExamEnd")
+                    {
+                        methods[mi].Invoke(p, null);
+                        return "called " + methods[mi].Name;
+                    }
+                }
+                return "SkipExamEnd not found on ExamScreenPresenter";
+            }
+            catch (Exception e)
+            {
+                return "exam_skip_end failed: " + e.Message;
             }
         }
     }

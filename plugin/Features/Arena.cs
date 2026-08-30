@@ -51,12 +51,36 @@ namespace GakumasAuto
         {
             try
             {
+                PresenterUtil.DismissLoading();
                 Campus.OutGame.OutGameTransitionUtility.To(Campus.ScreenState.PvpRateTop, true, false, null);
                 return "opened PvpRateTop";
             }
             catch (Exception e)
             {
                 return "pvp_enter failed: " + e.Message;
+            }
+        }
+
+        private object PvpAutoSet()
+        {
+            try
+            {
+                var edits = UnityEngine.Object.FindObjectsOfType<Campus.OutGame.PvpRateUnitEditScreenPresenter>();
+                if (edits == null || edits.Length == 0)
+                {
+                    Campus.OutGame.OutGameTransitionUtility.To(Campus.ScreenState.PvpRateUnitEdit, true, false, null);
+                    return "opened PvpRateUnitEdit; retry pvp_auto_set after the screen loads";
+                }
+                var msg = InvokeFirstMatch(new[]
+                {
+                    "AutoButton", "AutoSetButton", "UnitAutoButton", "ExecuteButton"
+                });
+                if (msg != null) return "pvp auto_set: " + msg;
+                return "PVP_AUTO_SET_NOT_FOUND: unit edit open but no auto button";
+            }
+            catch (Exception e)
+            {
+                return "pvp_auto_set failed: " + e.Message;
             }
         }
 

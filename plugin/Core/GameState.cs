@@ -172,6 +172,10 @@ namespace GakumasAuto
                 if (AnyActive<Campus.InGame.ScheduleBusinessScreenPresenter>()) return "produce_outing";
                 if (AnyActive<Campus.InGame.ScheduleCustomizeScreenPresenter>()) return "produce_customize";
                 if (AnyActive<Campus.OutGame.PvpRateTopScreenPresenter>()) return "pvp";
+                if (AnyActive<Campus.OutGame.GuildTopScreenPresenter>()) return "guild";
+                if (AnyActive<Campus.OutGame.CoinGashaTopScreenPresenter>()) return "coin_gasha";
+                if (AnyActive<Campus.OutGame.CardSupportCardDetailScreenPresenter>()) return "support_detail";
+                if (AnyActive<Campus.OutGame.CardSupportCardListScreenPresenter>()) return "support";
                 if (AnyActive<Campus.OutGame.PresentTopScreenPresenter>()) return "present";
                 if (AnyActive<Campus.OutGame.MissionTopScreenPresenter>()) return "mission";
                 if (AnyActive<Campus.OutGame.Shop.ShopTopScreenPresenter>()) return "shop";

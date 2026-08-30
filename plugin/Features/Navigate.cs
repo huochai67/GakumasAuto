@@ -24,6 +24,12 @@ namespace GakumasAuto
             { "contest", "PvpRateTop" },
             { "arena", "PvpRateTop" },
             { "gasha", "GashaAnimation" },
+            { "coin_gasha", "CoinGashaTop" },
+            { "capsule", "CoinGashaTop" },
+            { "guild", "GuildTop" },
+            { "club", "GuildTop" },
+            { "support", "CardSupportCardList" },
+            { "support_card", "CardSupportCardList" },
             { "item", "ItemTop" },
             { "profile", "ProfileTop" },
             { "story", "StoryMainPart" },
@@ -47,7 +53,7 @@ namespace GakumasAuto
 
                 var state = prop.GetValue(null) as Campus.ScreenState;
                 if (state == null) return "ScreenState." + name + " is null";
-
+                PresenterUtil.DismissLoading();
                 Campus.OutGame.OutGameTransitionUtility.To(state, true, false, null);
                 return "opened " + name;
             }

@@ -9,7 +9,7 @@ agent (harness / Claude Code / 任意 MCP 客户端)
 mcp/server.js            ← 零依赖 Node MCP 服务器
    │  文件指令通道（gakumas-ui-cmd.json → -resp.json，1Hz 轮询，无网络面）
    ▼
-plugin/GakumasAuto.dll   ← BepInEx 6 / Il2CppInterop 进程内插件（v2.2.1）
+plugin/GakumasAuto.dll   ← BepInEx 6 / Il2CppInterop 进程内插件（v2.3.0）
    │  直调游戏 API
    ▼
 gakumas.exe (Unity 6000.0.77f1, il2cpp)
@@ -32,9 +32,9 @@ gakumas.exe (Unity 6000.0.77f1, il2cpp)
 | `plugin/Dtos.cs` | 全部响应 DTO |
 | `plugin/Core/GameState.cs` | state / 界面识别 / 登录监视 |
 | `plugin/Ui/` | layout、find、点击、截屏 |
-| `plugin/Features/` | 按功能：Account / Daily / Shop / Exchange / Exam / Mission / Gift / Arena / Produce / Adv / Navigate |
+| `plugin/Features/` | 按功能：Account / Daily / Shop / Exchange / Exam / Mission / Gift / Arena / Produce / Club / Capsule / SupportCard / Adv / Navigate |
 | `plugin/GakumasAuto.csproj` | 插件离线编译（引用本机 `BepInEx\interop\*`） |
-| `mcp/server.js` | MCP 服务器（38 tools + 4 resources） |
+| `mcp/server.js` | MCP 服务器（53 tools + 4 resources） |
 | `mcp/cli.js` | 文件通道 CLI：`node mcp/cli.js state` |
 | `tools/ga-static-decrypt/` | packed GameAssembly 的版本绑定离线解密 / PE 重建工具 |
 | `tools/interop-gen/` | 离线 Il2CppInterop 生成器 |
@@ -49,7 +49,7 @@ gakumas.exe (Unity 6000.0.77f1, il2cpp)
 | `tools/interop-gen/README.md` | 从重建 PE 生成 interop 的完整命令 |
 | `gakumas-bepinex-kit/README.md` | BepInEx 部署快照的安装、验证和回滚 |
 | `gakumas-bepinex-kit/docs/PLUGIN-DEV-GUIDE.md` | BepInEx 6 / Il2CppInterop 插件开发和 MCP 通道 |
-| `.agent/skills/gakumas-daily/SKILL.md` | agent 执行日常任务时的操作顺序和安全边界 |
+| `.agent/skills/` | daily / contest / shop / club / capsule / support / produce |
 
 ## 从 packed GameAssembly 生成 interop
 
@@ -116,25 +116,31 @@ path 含 `/` 按全路径后缀匹配；裸名先精确后子串。
 | `mission_list` | 任务进度（可按 Daily/Weekly/… 过滤） |
 | `gift_list` | 礼物箱（未开界面会先 `gift_enter`） |
 | `pvp_state` | 竞技场剩余次数/段位/排名/rate；PvP 顶栏打开时尝试读对手 |
+| `club_state` | 社团：请求状态、可领取、可捐赠次数、成员 |
+| `capsule_state` | 硬币扭蛋机列表（friend/sense/logic/anomaly） |
+| `support_list` | 支援卡 id/等级（无需 UI） |
 | `produce_state` / `produce_schedule` | 当前/最近培育：类型、角色、P 点、体力、步骤种类、日程 |
 | `produce_shop` / `produce_outing` / `produce_cards` | 培育商店商品、外出选项、卡牌强化状态 |
-| `shop_list` / `exchange_list` / `exam_hand` / `exam_deck` | 同前 |
+| `shop_list` / `exchange_list` / `exchange_items` / `exam_hand` / `exam_deck` | 同前；`exam_hand` 含 `recommendIndex` |
 
 ### L3 任务
 
 | 工具 | 说明 |
 |---|---|
 | `navigate` / `go_home` | 主页页签 story/card/home/pvp/gasha |
-| `screen_goto` | `OutGameTransitionUtility.To`：home/shop/jewel/exchange/present/mission/work/produce/pvp 或 `Campus.ScreenState` 名 |
+| `screen_goto` | `OutGameTransitionUtility.To`：home/shop/jewel/exchange/present/mission/work/produce/pvp/guild/capsule/support 或 `Campus.ScreenState` 名 |
 | `daily_set_outing` / `daily_finish_outing` / `daily_collect_money` | 外出与活动费 |
 | `shop_enter` | `target=jewel\|exchange\|item\|daily` |
 | `shop_buy_item` | 强制 `confirm:true` |
-| `exchange_enter` | item/daily/event |
+| `exchange_enter` / `exchange_buy` | item/daily/event；买兑换商品强制 `confirm:true` |
 | `gift_receive` | 强制 `confirm:true`；省略 `gift_id` 则一括领取 |
 | `mission_receive` | 开任务界面并点领取 |
-| `pvp_enter` / `pvp_challenge` | 进竞技场；挑战 high/middle/low（`confirm:true`） |
+| `pvp_enter` / `pvp_challenge` / `pvp_auto_set` | 进竞技场；挑战 high/middle/low（`confirm:true`）；自动编成 |
+| `club_enter` / `club_receive` / `club_request` / `club_donate` | 社团领取/发起请求/送礼 |
+| `capsule_enter` / `capsule_draw` | 硬币扭蛋（`confirm:true`） |
+| `support_enter` / `support_upgrade` | 打开支援卡列表；升最低级一张（`confirm:true`） |
 | `produce_enter` | 进培育顶栏 |
-| `exam_start` | 跳过考试开场转场 |
+| `exam_start` / `exam_play` | 跳过考试开场；打出推荐或指定手牌 |
 
 ## 插件硬限制（改 DLL 必读）
 
@@ -163,7 +169,7 @@ path 含 `/` 按全路径后缀匹配；裸名先精确后子串。
 
 | 组件 | 版本 | 说明 |
 |---|---|---|
-| GakumasAuto.dll | 2.2.1 | 拆分多文件；account/item/gift/pvp/produce；produce_shop/outing/cards；pvp_challenge |
-| server.js | 0.4.0 | 38 tools + 4 resources |
+| GakumasAuto.dll | 2.3.0 | club/capsule/support/exchange_items/exam_play/pvp_auto_set |
+| server.js | 0.5.0 | 53 tools + 4 resources |
 | cli.js | — | 文件通道直连，不依赖 MCP 进程 |
 | 目标环境 | BepInEx 6.0.0-be.785 / Unity 6000.0.77f1 / gakumas il2cpp | 游戏更新用 `tools/interop-gen/` 重跑 |

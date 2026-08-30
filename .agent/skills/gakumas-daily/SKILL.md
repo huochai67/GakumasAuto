@@ -1,67 +1,93 @@
 ---
 name: gakumas-daily
 description: >
-  Run the gakumas home daily loop: collect activity fee (活動費), finish/set outings (お仕事),
-  claim the present box, then claim Daily/Weekly mission rewards. Use when the user says
-  日常, 收活动费, 设置外出, 领取礼物, 领取任务, daily routine, or runs /gakumas-daily.
+  Run the gakumas home daily loop matching KAA: activity fee, outings, presents,
+  money/AP shop, contest, guild, coin gasha, support-card upgrade, Daily/Weekly missions.
+  Use when the user says 日常, 收活动费, 设置外出, 领取礼物, 领取任务, 竞赛, 商店,
+  社团, 扭蛋, 支援卡, daily routine, or runs /gakumas-daily.
 ---
 
-# Gakumas daily
+# Gakumas daily (KAA parity, MCP + plugin)
 
-Drive the live game with **gakumas MCP tools**. If MCP is stale (tool missing / old list), fall back to `node mcp/cli.js <plugin-action>` on the same file channel.
+Drive the live game with **gakumas MCP tools**. If MCP is stale, `node mcp/cli.js <action> [key=value]`.
 
-Do not relaunch `gakumas.exe` from this agent terminal (Job Object kills the child). If the game is down, ask the user to start it.
+Do not relaunch `gakumas.exe` from this agent terminal. If the game is down, ask the user to start it in a normal CMD.
 
-Spending actions that need `confirm:true`: `gift_receive`, `daily_set_outing` (to actually start), `shop_buy_item`, `pvp_challenge`. This skill uses confirm on gifts and outing start.
+Spending that needs `confirm:true`: `gift_receive`, `daily_set_outing`, `shop_buy_item`, `exchange_buy`, `pvp_challenge`, `club_request`, `club_donate`, `capsule_draw`, `support_upgrade`.
+
+Per-task detail: `gakumas-shop`, `gakumas-contest`, `gakumas-club`, `gakumas-capsule`, `gakumas-support`. Produce is **not** daily — `gakumas-produce`.
+
+## Global pitfalls (live)
+
+- Title `TAP TO START`: `invoke_callback` `Canvas/FullScreen/BackgroundAsset/StartButton` **once** while not loading. Wait `userId` + `screen=home`. Spamming StartButton during loading stalls / crashes.
+- `go_home` is MCP-only. CLI: `screen_goto screen=home`.
+- Stuck NOW LOADING: `loading_hide` (plugin `LoadingManager.HideImmediate`) **before** `screen_goto` / `pvp_enter`. Footer `BackButton` often no-ops under the overlay.
+- `invoke_callback` matches the **first** path. Stacked sheets: `SheetRoot/Buttons/ExecuteButton`, not bare `ExecuteButton`.
+- After 受取完了 / 閉じる: `CancelButton` only. Extra `ExecuteButton` on an empty layer can NRE and dump to TAP TO START.
+- `screen_goto` from `support_detail` (and some overlay-closed states) NRE (`GetCancellationTokenOnDestroy`) → title. Recover with one StartButton tap.
+
+Default: run every step below. Skip only if the user disabled it or it is already done.
 
 ## 0. Ready
 
-1. `state` — need `userId` and preferably `screen=home`.
-2. Title (`TAP TO START`): `invoke_callback` path `Canvas/FullScreen/BackgroundAsset/StartButton`, then wait until `state.userId` is set and `screen=home`.
-3. `通信エラー` sheet: `invoke_callback` path `ErrorSheet(Clone)/Canvas/UIContentArea/SheetMoveRoot/SheetRoot/Buttons/ExecuteButton` to retry.
-4. Overlay result sheets (`受取完了` / 閉じる): `invoke_callback` path `SheetRoot/Buttons/CancelButton`.
-5. After every overlay, `screenshot` if the next click would be ambiguous.
+1. `state` — need `userId`, prefer `screen=home`.
+2. Title: StartButton once, wait home.
+3. `通信エラー`: `invoke_callback` `ErrorSheet(Clone)/Canvas/UIContentArea/SheetMoveRoot/SheetRoot/Buttons/ExecuteButton`.
+4. `go_home` / `screen_goto` `home` if not on home (`loading_hide` first if overlay).
 
 ## 1. 活動費
 
-`daily_collect_money`.
-
-- `collected` — done.
-- `no_receivable_money` — already empty; continue.
-- Sheet left open (`閉じる` in texts): close with `CancelButton`, then continue.
+`daily_collect_money`. `collected` / `no_receivable_money` both OK.
 
 ## 2. お仕事
 
-`daily_state`. For each of `minilive` / `livestreaming`:
+`daily_state`. For `minilive` / `livestreaming`:
 
 | `state` | Action |
 |---|---|
-| `Completed` | `daily_finish_outing` (optionally `work` to restrict) |
-| `Acceptable` | `daily_set_outing` with `confirm:true`. Default 12 hours if `hours` omitted and the UI still has a duration picker. Reuse last character unless the user named one. |
-| `Working` | Skip. `remainingSeconds` may be 0 while still Working — do not treat 0 as Completed. |
-
-If finish produced a result sheet, close it, then set any now-Acceptable slot.
+| `Completed` | `daily_finish_outing` |
+| `Acceptable` | `daily_set_outing` `confirm:true` (default 12h, reuse last character) |
+| `Working` | Skip. `remainingSeconds=0` is still Working. |
 
 ## 3. プレゼント
 
-`gift_receive` with `confirm:true` (omit `gift_id` = 一括受取).
+`gift_receive` `confirm:true` (omit `gift_id` = 一括). Close 受取完了 with `CancelButton`.
 
-- Success looks like `invoked … AllReceiveButton` plus a `受取完了` sheet. Close the sheet.
-- Empty box: continue.
-- `gift_list` first only if you need to report what will be claimed.
+## 4. 商店
 
-## 4. デイリー / ウィークリー
+Follow `gakumas-shop`. Money/AP = daily exchange (`exchange_enter` `daily` + recommend buys). Weekly free pack = jewel `isFree`. Then home.
 
-`mission_list` `Daily` and `Weekly` to know if anything is `Receivable`. Claim via UI anyway (login/money collect can flip state after step 1).
+## 5. 竞赛
 
-1. `screen_goto` `mission` (or `mission_receive` once). If the first `mission_receive` only opened the screen, wait and continue on the live UI.
-2. Daily tab (default): `invoke_callback` path `ScreenHeaderFooterCanvas/ContentArea/SlideRoot/ReceiveAllButton`. Close any `受取完了` sheet.
-3. Weekly tab: `invoke_callback` path `CampusSimpleTabButtonGroup/CampusSimpleTabButton (1)` (label ウィークリー), then the same `ReceiveAllButton`.
-4. No popup after 一括受取 = nothing receivable on that tab. Continue.
+Follow `gakumas-contest`. One successful skip-fight is enough for the daily mission; do not trust a stale `remainingDailyPlayCount=5` to loop.
+
+## 6. 社团
+
+Follow `gakumas-club`. Receive if `canReceive`. Request if `canRequest` (pick アノマリーノート, sheet Execute). Donate via DonateButton + `SheetRoot/Buttons/ExecuteButton`, not the plugin's immediate MoveNext.
+
+## 7. 扭蛋机
+
+Follow `gakumas-capsule`. Default **skip**. `capsule_enter` before `capsule_state`.
+
+## 8. 支援卡升级一张
+
+Follow `gakumas-support`. `support_upgrade` `confirm:true` three times (list → detail → Enhance) then CardEnhance `ExecuteButton`. Do not `screen_goto` from detail.
+
+## 9. デイリー / ウィークリー
+
+`mission_list` `category=Daily` / `Weekly` needs no UI. `summary.receivable` is ground truth.
+
+1. `screen_goto` `mission` (or `mission_receive` — first call may only open MissionTop).
+2. Daily: `invoke_callback` `ScreenHeaderFooterCanvas/ContentArea/SlideRoot/ReceiveAllButton`. Close 受取完了 with `CancelButton`.
+3. Weekly: `find` ウィークリー / `CampusSimpleTabButton` (hardcoded `(1)` was **missing** this session). Then same ReceiveAllButton.
+4. No popup after 一括受取 = nothing receivable. Continue.
 5. `screen_goto` `home`.
 
-Do not switch to 期間限定 / ノーマル / アイドル unless the user asked.
+Do not switch 期間限定 / ノーマル / アイドル unless asked.
 
-## 5. Report
+Live: Daily receivable 4→0 after ReceiveAll (マニー回収 / マニー交換 / コンテスト挑戦 / サポート強化). Weekly already 0.
 
-One short table: each step → done / skipped / blocked, plus leftover Working outings and any still-Receivable missions. End on `screen=home` when possible.
+## 10. Report
+
+Table: each step → done / skipped / blocked. Leftover Working outings, remaining PvP tickets, still-Receivable missions. End on `screen=home` when possible.
+---

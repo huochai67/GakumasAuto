@@ -227,6 +227,13 @@ namespace GakumasAuto
                                 float ty = root.TryGetProperty("y", out var yEl) ? yEl.GetSingle() : -1f;
                                 result = TapAt(tx, ty);
                                 break;
+                            case "drag_at":
+                                float dx1 = root.TryGetProperty("x", out var dxEl) ? dxEl.GetSingle() : -1f;
+                                float dy1 = root.TryGetProperty("y", out var dyEl) ? dyEl.GetSingle() : -1f;
+                                float dx2 = root.TryGetProperty("x2", out var dx2El) ? dx2El.GetSingle() : -1f;
+                                float dy2 = root.TryGetProperty("y2", out var dy2El) ? dy2El.GetSingle() : -1f;
+                                result = DragAt(dx1, dy1, dx2, dy2);
+                                break;
                             case "click":
                                 result = ClickByPath(path);
                                 break;
@@ -345,6 +352,64 @@ namespace GakumasAuto
                                 string rival = root.TryGetProperty("rival", out var rvEl) ? (rvEl.GetString() ?? "") : "";
                                 bool pvpConfirm = root.TryGetProperty("confirm", out var pcEl) && pcEl.ValueKind == JsonValueKind.True;
                                 result = PvpChallenge(rival, pvpConfirm);
+                                break;
+                            case "pvp_auto_set":
+                                result = PvpAutoSet();
+                                break;
+                            case "club_state":
+                                BuildClubState();
+                                result = GakumasAutoPlugin.SharedClubState;
+                                break;
+                            case "club_enter":
+                                result = ClubEnter();
+                                break;
+                            case "club_receive":
+                                result = ClubReceive();
+                                break;
+                            case "club_request":
+                                result = ClubRequest();
+                                break;
+                            case "club_donate":
+                                result = ClubDonate();
+                                break;
+                            case "capsule_state":
+                                BuildCapsuleState();
+                                result = GakumasAutoPlugin.SharedCapsuleList;
+                                break;
+                            case "capsule_enter":
+                                result = CapsuleEnter();
+                                break;
+                            case "capsule_draw":
+                                string capKind = root.TryGetProperty("kind", out var ckEl) ? (ckEl.GetString() ?? "") : "";
+                                bool capConfirm = root.TryGetProperty("confirm", out var ccEl) && ccEl.ValueKind == JsonValueKind.True;
+                                result = CapsuleDraw(capKind, capConfirm);
+                                break;
+                            case "support_list":
+                                BuildSupportList();
+                                result = GakumasAutoPlugin.SharedSupportCards;
+                                break;
+                            case "support_enter":
+                                result = SupportEnter();
+                                break;
+                            case "support_upgrade":
+                                bool suConfirm = root.TryGetProperty("confirm", out var suEl) && suEl.ValueKind == JsonValueKind.True;
+                                result = SupportUpgrade(suConfirm);
+                                break;
+                            case "exchange_items":
+                                BuildExchangeItems();
+                                result = GakumasAutoPlugin.SharedExchangeItems;
+                                break;
+                            case "exam_play":
+                                int examIdx = -1;
+                                if (root.TryGetProperty("index", out var eiEl) && eiEl.ValueKind == JsonValueKind.Number)
+                                    examIdx = eiEl.GetInt32();
+                                result = ExamPlay(examIdx);
+                                break;
+                            case "exam_skip_end":
+                                result = ExamSkipEnd();
+                                break;
+                            case "loading_hide":
+                                result = PresenterUtil.DismissLoading();
                                 break;
                             default:
                                 ok = false;

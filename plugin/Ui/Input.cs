@@ -218,6 +218,40 @@ namespace GakumasAuto
             return $"tapped at ({x:F0},{y:F0}) hit={hit.name}: down={down} up={up} click={click}";
         }
 
+        private string DragAt(float x, float y, float x2, float y2)
+        {
+            var log = GakumasAutoPlugin.SharedLog;
+            if (x < 0 || y < 0 || x2 < 0 || y2 < 0) return "invalid coordinates";
+            var es = EventSystem.current;
+            if (es == null) return "EventSystem.current is null";
+
+            var ped = new PointerEventData(es)
+            {
+                position = new Vector2(x, y),
+                button = PointerEventData.InputButton.Left,
+                pointerId = -1,
+                pressPosition = new Vector2(x, y)
+            };
+            ped.delta = Vector2.zero;
+
+            var results = new Il2CppSystem.Collections.Generic.List<RaycastResult>();
+            es.RaycastAll(ped, results);
+            if (results.Count == 0) return $"no UI hit at ({x:F0},{y:F0})";
+            var hit = results[0].gameObject;
+
+            ExecuteEvents.ExecuteHierarchy<IPointerDownHandler>(hit, ped, ExecuteEvents.pointerDownHandler);
+            ExecuteEvents.ExecuteHierarchy<IBeginDragHandler>(hit, ped, ExecuteEvents.beginDragHandler);
+            ped.position = new Vector2(x2, y2);
+            ped.delta = new Vector2(x2 - x, y2 - y);
+            ExecuteEvents.ExecuteHierarchy<IDragHandler>(hit, ped, ExecuteEvents.dragHandler);
+            ExecuteEvents.ExecuteHierarchy<IDropHandler>(hit, ped, ExecuteEvents.dropHandler);
+            ExecuteEvents.ExecuteHierarchy<IPointerUpHandler>(hit, ped, ExecuteEvents.pointerUpHandler);
+            ExecuteEvents.ExecuteHierarchy<IEndDragHandler>(hit, ped, ExecuteEvents.endDragHandler);
+
+            log.LogInfo($"DRAG: {x:F0},{y:F0} -> {x2:F0},{y2:F0} hit={hit.name}");
+            return $"dragged ({x:F0},{y:F0})->({x2:F0},{y2:F0}) hit={hit.name}";
+        }
+
         private string InvokeButtonCallback(string path)
         {
             var log = GakumasAutoPlugin.SharedLog;
@@ -267,6 +301,20 @@ namespace GakumasAuto
             catch (Exception e) { return $"button callback failed: {e.Message}"; }
 
             return $"no wired callback found on {target.name}";
+        }
+
+        private string InvokeFirstMatch(string[] names)
+        {
+            if (names == null) return null;
+            for (int i = 0; i < names.Length; i++)
+            {
+                if (string.IsNullOrEmpty(names[i])) continue;
+                if (FindTarget(names[i]) == null) continue;
+                var msg = InvokeButtonCallback(names[i]);
+                if (msg != null && msg.IndexOf("invoked", StringComparison.Ordinal) >= 0)
+                    return msg;
+            }
+            return null;
         }
 
         private string DebugButton(string path)
