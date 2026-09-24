@@ -5,7 +5,7 @@
       "command": "node",
       "args": ["mcp/server.js"],
       "env": {
-        "GAKUMAS_BEPINEX": "E:/DMM/gakumas/BepInEx"
+        "GAKUMAS_BEPINEX": "X:/path/to/gakumas/BepInEx"
       }
     }
   }

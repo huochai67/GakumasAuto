@@ -36,34 +36,34 @@ gakumas.exe (IL2CPP, 壳启动器自解压)
   <ItemGroup>
     <!-- BepInEx 运行时（必引） -->
     <Reference Include="BepInEx.Core">
-      <HintPath>E:\DMM\gakumas\BepInEx\core\BepInEx.Core.dll</HintPath>
+      <HintPath>X:\path\to\gakumas\BepInEx\core\BepInEx.Core.dll</HintPath>
     </Reference>
     <Reference Include="BepInEx.Unity.IL2CPP">
-      <HintPath>E:\DMM\gakumas\BepInEx\core\BepInEx.Unity.IL2CPP.dll</HintPath>
+      <HintPath>X:\path\to\gakumas\BepInEx\core\BepInEx.Unity.IL2CPP.dll</HintPath>
     </Reference>
     <Reference Include="Il2CppInterop.Runtime">
-      <HintPath>E:\DMM\gakumas\BepInEx\core\Il2CppInterop.Runtime.dll</HintPath>
+      <HintPath>X:\path\to\gakumas\BepInEx\core\Il2CppInterop.Runtime.dll</HintPath>
     </Reference>
     <Reference Include="Il2CppInterop.Common">
-      <HintPath>E:\DMM\gakumas\BepInEx\core\Il2CppInterop.Common.dll</HintPath>
+      <HintPath>X:\path\to\gakumas\BepInEx\core\Il2CppInterop.Common.dll</HintPath>
     </Reference>
     <Reference Include="Il2Cppmscorlib">
-      <HintPath>E:\DMM\gakumas\BepInEx\interop\Il2Cppmscorlib.dll</HintPath>
+      <HintPath>X:\path\to\gakumas\BepInEx\interop\Il2Cppmscorlib.dll</HintPath>
     </Reference>
     <!-- Unity 引擎（按需引） -->
     <Reference Include="UnityEngine.CoreModule">
-      <HintPath>E:\DMM\gakumas\BepInEx\interop\UnityEngine.CoreModule.dll</HintPath>
+      <HintPath>X:\path\to\gakumas\BepInEx\interop\UnityEngine.CoreModule.dll</HintPath>
     </Reference>
     <Reference Include="UnityEngine.InputLegacyModule">
-      <HintPath>E:\DMM\gakumas\BepInEx\interop\UnityEngine.InputLegacyModule.dll</HintPath>
+      <HintPath>X:\path\to\gakumas\BepInEx\interop\UnityEngine.InputLegacyModule.dll</HintPath>
     </Reference>
     <!-- 游戏代码（按需引：Assembly-CSharp / campus-submodule.Runtime / ADV.Runtime / Qua.Utility / quaunity-ui.Runtime / ...） -->
     <Reference Include="Assembly-CSharp">
-      <HintPath>E:\DMM\gakumas\BepInEx\interop\Assembly-CSharp.dll</HintPath>
+      <HintPath>X:\path\to\gakumas\BepInEx\interop\Assembly-CSharp.dll</HintPath>
     </Reference>
     <!-- 日志（NuGet 不可达时的替代：游戏自带 dotnet 目录 6.0 库） -->
     <Reference Include="Microsoft.Extensions.Logging.Abstractions">
-      <HintPath>E:\DMM\gakumas\dotnet\Microsoft.Extensions.Logging.Abstractions.dll</HintPath>
+      <HintPath>X:\path\to\gakumas\dotnet\Microsoft.Extensions.Logging.Abstractions.dll</HintPath>
     </Reference>
   </ItemGroup>
 </Project>
@@ -218,14 +218,14 @@ engine.Branch.ChoiceCount / SelectUnselectedChoices()   // 自动选分支
 # 只部署插件，不覆盖 BepInEx 或 interop
 powershell -NoProfile -ExecutionPolicy Bypass -File `
   <repo>\tools\deploy-plugin.ps1 `
-  -TargetDir 'E:\DMM\gakumas' `
+  -TargetDir 'X:\path\to\gakumas' `
   -PluginPath '<插件目录>\bin\Release\net6.0\<插件名>.dll'
 ```
 
 ```powershell
 # 在独立的 PowerShell/CMD 中重启游戏；不要从 agent 终端启动子进程
 powershell -NoProfile -Command "Stop-Process -Name gakumas -Force; Start-Sleep 2;
-Start-Process -FilePath 'E:\DMM\gakumas\gakumas.exe' -ArgumentList '/viewer_id=...','/open_id=...','/pf_access_token=...' -WorkingDirectory 'E:\DMM\gakumas'"
+Start-Process -FilePath 'X:\path\to\gakumas\gakumas.exe' -ArgumentList '/viewer_id=...','/open_id=...','/pf_access_token=...' -WorkingDirectory 'X:\path\to\gakumas'"
 
 # 验证（LogOutput.log 顺序出现即成功）
 #   1. "N plugins to load"

@@ -15,7 +15,7 @@ BepInEx 与 doorstop 由使用者从官方渠道安装；本仓库只提供解�
 
 ## 2. 前置条件
 
-- Windows 10 / 11 x64；下文以游戏目录 `E:\DMM\gakumas` 为例。
+- Windows 10 / 11 x64；下文以游戏目录 `X:\path\to\gakumas` 为例。
 - 官方 BepInEx 6（Bleeding Edge 6.0.0-be.785+，Unity IL2CPP x64）与 doorstop 4.x 已装入游戏目录：
   `winhttp.dll`、`doorstop_config.ini`、`.doorstop_version`、`BepInEx\{core,config,interop,plugins}` 齐备。
 - .NET SDK（构建插件，目标 net6.0；仓库以 .NET 8 SDK 验证）。
@@ -35,7 +35,7 @@ dotnet build plugin\GakumasAuto.csproj -c Release
 
 ```powershell
 python tools\ga-static-decrypt\ga_static_decrypt.py `
-  E:\DMM\gakumas\GameAssembly.dll out\GameAssembly_static_exact.dll
+  X:\path\to\gakumas\GameAssembly.dll out\GameAssembly_static_exact.dll
 ```
 
 密钥默认自动扫描（记录表/码表/key/helper/payload/sbox）；也可用 `--dump`/`--carve`/`--profile`
@@ -46,7 +46,7 @@ python tools\ga-static-decrypt\ga_static_decrypt.py `
 
 ```powershell
 powershell -NoProfile -ExecutionPolicy Bypass -File tools\doorstop-shim\install.ps1 `
-  -GameRoot 'E:\DMM\gakumas' `
+  -GameRoot 'X:\path\to\gakumas' `
   -ImagePath '<3.2 产出的解密镜像>' `
   -RestoreDoorstopProxy `
   -EnableInteropUpdate `
@@ -63,9 +63,9 @@ BepInEx 静默不加载」）。细节与回滚见 `tools/doorstop-shim/README.m
 在**独立的** PowerShell / CMD 里启动（不要从 agent 终端开子进程：登录参数会过期）：
 
 ```powershell
-Start-Process -FilePath 'E:\DMM\gakumas\gakumas.exe' `
+Start-Process -FilePath 'X:\path\to\gakumas\gakumas.exe' `
   -ArgumentList '/viewer_id=<user_id>','/open_id=<open_id>','/pf_access_token=<token>' `
-  -WorkingDirectory 'E:\DMM\gakumas'
+  -WorkingDirectory 'X:\path\to\gakumas'
 ```
 
 首次启动日志出现 `Detected outdated interop assemblies, will regenerate them now`，约 83 s 生成
@@ -78,7 +78,7 @@ Start-Process -FilePath 'E:\DMM\gakumas\gakumas.exe' `
 
 ```powershell
 powershell -NoProfile -ExecutionPolicy Bypass -File tools\deploy-plugin.ps1 `
-  -TargetDir 'E:\DMM\gakumas' `
+  -TargetDir 'X:\path\to\gakumas' `
   -PluginPath '.\plugin\bin\Release\net6.0\GakumasAuto.dll'
 ```
 
@@ -109,10 +109,10 @@ node mcp\tool.js <tool> [k=v]    # 直接调用 MCP 工具实现
 4. 手工通道冒烟（文件必须 UTF-8）：
 
 ```powershell
-Set-Content -Path 'E:\DMM\gakumas\BepInEx\gakumas-ui-cmd.json' `
+Set-Content -Path 'X:\path\to\gakumas\BepInEx\gakumas-ui-cmd.json' `
   -Value '{"id":"manual-1","action":"state"}' -Encoding UTF8
 Start-Sleep 3
-Get-Content 'E:\DMM\gakumas\BepInEx\gakumas-ui-resp.json'
+Get-Content 'X:\path\to\gakumas\BepInEx\gakumas-ui-resp.json'
 ```
 
 ## 5. 游戏更新后的重新部署
@@ -126,7 +126,7 @@ Get-Content 'E:\DMM\gakumas\BepInEx\gakumas-ui-resp.json'
 
 ## 6. 回滚
 
-- 插件：`Remove-Item 'E:\DMM\gakumas\BepInEx\plugins\GakumasAuto.dll'`，或从
+- 插件：`Remove-Item 'X:\path\to\gakumas\BepInEx\plugins\GakumasAuto.dll'`，或从
   `BepInEx\.gakumas-auto-backup-*\GakumasAuto.dll` 恢复。
 - shim：`powershell -NoProfile -ExecutionPolicy Bypass -File tools\doorstop-shim\install.ps1 -Revert`
   （还原 `doorstop_config.ini`、`BepInEx.cfg`、`winhttp.dll` 的备份）。

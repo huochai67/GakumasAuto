@@ -64,8 +64,8 @@ LibCpp2ILInitializationException: Failed to find code registration or metadata r
 setx BEPINEX_GAME_ASSEMBLY_PATH "<abs>\GA_conform.dll"    # 或用启动脚本注入
 # 2) 恢复自生成 + 清空既有 interop
 #    BepInEx\config\BepInEx.cfg → [IL2CPP] UpdateInteropAssemblies = true
-Remove-Item E:\DMM\gakumas\BepInEx\interop\* -Force
-Remove-Item E:\DMM\gakumas\BepInEx\interop\assembly-hash.txt -Force
+Remove-Item X:\path\to\gakumas\BepInEx\interop\* -Force
+Remove-Item X:\path\to\gakumas\BepInEx\interop\assembly-hash.txt -Force
 # 3) 启动游戏
 ```
 

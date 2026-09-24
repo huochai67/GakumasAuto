@@ -139,7 +139,7 @@ tools\doorstop-shim\host-probe\bin\Release\shim-host-probe.exe <gameRoot> <shim.
 
 ```powershell
 powershell -NoProfile -ExecutionPolicy Bypass -File tools\doorstop-shim\install.ps1 `
-  -GameRoot 'E:\DMM\gakumas' `
+  -GameRoot 'X:\path\to\gakumas' `
   -ImagePath '<解密镜像>' `
   -RestoreDoorstopProxy `      # 若 winhttp.dll 被改名停用（如 winhttp2.dll），恢复它
   -EnableInteropUpdate `       # 置 UpdateInteropAssemblies = true，让 BepInEx 首次启动重新生成 interop

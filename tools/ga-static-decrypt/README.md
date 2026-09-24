@@ -56,7 +56,7 @@ payload，工具会回落到提示值并在门禁处失败（不会静默出错�
 ```powershell
 # 1) 自动：从工作区 dump 扫描密钥（推荐；一条命令覆盖新构建）
 python tools\ga-static-decrypt\ga_static_decrypt.py `
-  E:\DMM\gakumas\GameAssembly.dll out\GameAssembly_static_exact.dll `
+  X:\path\to\gakumas\GameAssembly.dll out\GameAssembly_static_exact.dll `
   --dump <loader-workspace-dump.bin> --reference <known-good-image.bin>
 
 # 2) carve：notes/stable-inputs.py 的产物目录（key/sbox/pass3/records/helper_blk + manifest.json）

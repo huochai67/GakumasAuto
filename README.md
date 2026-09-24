@@ -90,7 +90,7 @@ GakumasAuto/
    ```xml
    <Project>
      <PropertyGroup>
-       <GakumasRoot>E:\DMM\gakumas</GakumasRoot>
+       <GakumasRoot>X:\path\to\gakumas</GakumasRoot>
      </PropertyGroup>
    </Project>
    ```
@@ -104,7 +104,7 @@ GakumasAuto/
    使用提供的部署脚本将生成的 DLL 安装到游戏的 `BepInEx\plugins` 目录：
    ```powershell
    powershell -NoProfile -ExecutionPolicy Bypass -File .\tools\deploy-plugin.ps1 `
-     -TargetDir 'E:\DMM\gakumas' `
+     -TargetDir 'X:\path\to\gakumas' `
      -PluginPath '.\plugin\bin\Release\net6.0\GakumasAuto.dll'
    ```
 
@@ -121,7 +121,7 @@ GakumasAuto/
       "command": "node",
       "args": ["E:/code/GakumasAuto/mcp/server.js"],
       "env": {
-        "GAKUMAS_BEPINEX": "E:/DMM/gakumas/BepInEx"
+        "GAKUMAS_BEPINEX": "X:/path/to/gakumas/BepInEx"
       }
     }
   }
@@ -136,7 +136,7 @@ GakumasAuto/
 
 ```powershell
 # 在独立终端启动游戏（参数从 DMM 客户端启动链接中获取）
-E:\DMM\gakumas\gakumas.exe /viewer_id=<user_id> /open_id=<open_id> /pf_access_token=<token>
+X:\path\to\gakumas\gakumas.exe /viewer_id=<user_id> /open_id=<open_id> /pf_access_token=<token>
 ```
 
 游戏启动后，检查 `BepInEx\LogOutput.log`：
@@ -309,7 +309,7 @@ BepInEx\interop\*.dll (由 BepInEx 自身管线运行时生成)
 1. **解密与 PE 重建**（`tools/ga-static-decrypt`，Python 实现）：
    ```powershell
    python tools\ga-static-decrypt\ga_static_decrypt.py `
-     "E:\DMM\gakumas\GameAssembly.dll" `
+     "X:\path\to\gakumas\GameAssembly.dll" `
      "tools\ga-static-decrypt\out\GameAssembly_static_exact.dll"
    # 密钥默认自动扫描（记录表/pass3/key/helper/payload）；手工输入与 profile 见该目录 README
    ```

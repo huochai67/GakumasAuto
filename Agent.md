@@ -171,12 +171,12 @@ graph TD
 
 - **启动游戏**：
   使用 DMM 授权命令启动游戏：
-  `E:\DMM\gakumas\gakumas.exe /viewer_id=<id> /open_id=<open_id> /pf_access_token=<token>`
+  `X:\path\to\gakumas\gakumas.exe /viewer_id=<id> /open_id=<open_id> /pf_access_token=<token>`
 - **重新编译插件**：
   ```bash
   dotnet build plugin/GakumasAuto.csproj -c Release
   ```
 - **部署插件**：
-  在游戏关闭状态下，将 `plugin/bin/Release/net6.0/GakumasAuto.dll` 复制至 `E:\DMM\gakumas\BepInEx\plugins\GakumasAuto.dll`。
+  在游戏关闭状态下，将 `plugin/bin/Release/net6.0/GakumasAuto.dll` 复制至 `X:\path\to\gakumas\BepInEx\plugins\GakumasAuto.dll`。
 - **日志观察**：
-  游戏运行日志位于 `E:\DMM\gakumas\BepInEx\LogOutput.log`。
+  游戏运行日志位于 `X:\path\to\gakumas\BepInEx\LogOutput.log`。
