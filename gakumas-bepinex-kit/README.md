@@ -15,8 +15,9 @@
 | `BepInEx/plugins/` | 本地构建的插件 DLL，不属于公开发布内容 |
 | `BepInEx/unity-libs/` | 本地私有快照目录，不属于公开发布内容 |
 | `samples/GakumasAuto/` | v2.0.2 合并版插件源码样例 |
-| `docs/PLUGIN-DEV-GUIDE.md` | 插件开发手册（含 MCP 集成说明） |
 | `deploy.ps1` | 检查外部 BepInEx 并只部署 GakumasAuto.dll |
+
+插件开发手册（含 MCP 集成说明）已移至仓库根目录：`../docs/PLUGIN-DEV-GUIDE.md`。
 
 ## 当前版本工具链
 
@@ -100,5 +101,5 @@ Remove-Item 'E:\DMM\gakumas\BepInEx\plugins\GakumasAuto.dll' -Force
 
 - interop 程序集与 **GameAssembly 版本绑定**：游戏更新后需先用 `tools/ga-static-decrypt/` 重新产出解密镜像（生成输入必须是解密/重建后的 GameAssembly，不是盘上的 packed dll），再用 `tools/doorstop-shim/install.ps1 -ImagePath <新镜像>` 接上；BepInEx 会在下次启动自行重新生成
 - BepInEx 不修改游戏文件；封号风险由使用者自担（进程内注入，AC 驱动未拦截但无法保证长期安全）
-- 插件 MonoBehaviour 方法禁止暴露托管类型（DTO/List/StringBuilder）签名——Il2CppInterop 会替换为 substitute 并导致调用异常；一律经插件类静态字段路由（详见 PLUGIN-DEV-GUIDE §限制）
+- 插件 MonoBehaviour 方法禁止暴露托管类型（DTO/List/StringBuilder）签名——Il2CppInterop 会替换为 substitute 并导致调用异常；一律经插件类静态字段路由（详见 `../docs/PLUGIN-DEV-GUIDE.md` §限制）
 - layout 上限 500 节点/深度 12；主界面全量约 500+，超出部分截断（`find` 按需收敛）

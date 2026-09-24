@@ -60,12 +60,12 @@ GakumasAuto/
 ├── tools/                      # 离线逆向与绑定生成工具链
 │   ├── ga-static-decrypt/      # packed GameAssembly 静态解密与 PE 重建工具
 │   └── doorstop-shim/          # 进程内 interop 生成：注入 codereg 常量后交给 BepInEx（含 install.ps1）
-├── gakumas-bepinex-kit/        # 部署脚本与参考文档
+├── gakumas-bepinex-kit/        # 部署脚本与 BepInEx 参考配置
 │   ├── deploy.ps1              # 插件安全部署脚本（仅复制 DLL，不改动游戏基础环境）
-│   ├── BepInEx/config/         # BepInEx 推荐配置文件模板
-│   └── docs/
-│       ├── PLUGIN-DEV-GUIDE.md # 插件开发与 IL2CPP 避坑指南
-│       └── IMAGE-CONFORM-ACCEPTANCE.md # 镜像规范化验收判据与实测记录
+│   └── BepInEx/config/         # BepInEx 推荐配置文件模板
+├── docs/                       # 参考文档
+│   ├── PLUGIN-DEV-GUIDE.md     # 插件开发与 IL2CPP 避坑指南
+│   └── IMAGE-CONFORM-ACCEPTANCE.md # 镜像规范化验收判据与实测记录
 ├── .agent/skills/              # 面向 AI Agent 的业务技能定义（Daily, Produce, Contest 等）
 ├── Directory.Build.props.example # 本地构建路径配置示例
 └── .mcp.example.json           # MCP 客户端配置示例
@@ -320,7 +320,7 @@ BepInEx\interop\*.dll (由 BepInEx 自身管线运行时生成)
    ```
    之后 BepInEx 每次启动自己判定 hash：仅当镜像 / `unity-libs` / 生成器版本变化时才重新生成（首次约 83 s）。
 
-> 镜像规范化的验收判据（AC-1…AC-8）与 2026-09-24 实测记录见 `gakumas-bepinex-kit/docs/IMAGE-CONFORM-ACCEPTANCE.md`。
+> 镜像规范化的验收判据（AC-1…AC-8）与 2026-09-24 实测记录见 `docs/IMAGE-CONFORM-ACCEPTANCE.md`。
 
 详细逆向约束与哈希校验机制参见各工具目录下的 `README.md`。
 
@@ -328,7 +328,7 @@ BepInEx\interop\*.dll (由 BepInEx 自身管线运行时生成)
 
 ## 插件开发规范与 IL2CPP 避坑指南
 
-修改或扩展 `plugin/` 源码时必须严格遵守以下约束（详见 `gakumas-bepinex-kit/docs/PLUGIN-DEV-GUIDE.md`）：
+修改或扩展 `plugin/` 源码时必须严格遵守以下约束（详见 `docs/PLUGIN-DEV-GUIDE.md`）：
 
 1. **禁止在 MonoBehaviour 方法签名中暴露托管类型**：
    在 Il2CppInterop 环境下，MonoBehaviour 的方法若带有自定义托管类（DTO、`List<T>`、`StringBuilder`）作为参数或返回值，会被生成为无法正常调用的 substitute 类型导致崩溃。所有指令的响应结果必须路由到 `GakumasAutoPlugin.Shared*` 静态字段中统一序列化。
