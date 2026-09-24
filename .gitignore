@@ -43,3 +43,7 @@ gakumas-ui-cmd.json
 gakumas-ui-resp.json
 gakumas-screen.png
 *.done.json
+
+# python
+__pycache__/
+*.pyc

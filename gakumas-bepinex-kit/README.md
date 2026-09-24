@@ -22,7 +22,7 @@
 
 公开发布不携带 BepInEx 二进制。用户应先从官方渠道安装与游戏版本匹配的 BepInEx 6，再准备匹配的 interop：
 
-1. 用 `tools/ga-static-decrypt/` 和匹配版本 profile 重建 `GameAssembly_static_exact.dll`。
+1. 用 `python tools\ga-static-decrypt\ga_static_decrypt.py <packed.dll> <out.dll>` 重建 `GameAssembly_static_exact.dll`（密钥默认自动扫描；也可 `--profile` 用冻结输入）。
 2. 用 `tools/doorstop-shim/install.ps1 -ImagePath <镜像> -EnableInteropUpdate` 部署 shim（改写 `doorstop_config.ini`、写 shim 配置与解密镜像副本，并把 `UpdateInteropAssemblies` 置为 `true`）。
 3. 启动一次游戏：BepInEx 在自己的管线里生成 `BepInEx/interop/`（首次约 83 s），此后按 hash 判定是否重新生成。
 4. 构建插件，然后运行 `deploy.ps1 -TargetDir <游戏目录> -PluginPath <GakumasAuto.dll>`。

@@ -303,12 +303,15 @@ GameAssembly_static_exact.dll (重建的标准 PE 分析镜像)
 BepInEx\interop\*.dll (由 BepInEx 自身管线运行时生成)
 ```
 
-1. **解密与 PE 重建**（`tools/ga-static-decrypt`）：
+> `ga-static-decrypt` 为 Python 实现（Windows x64 + Python 3.9+）：密钥可自动扫描（`--dump <加载器工作区 dump>`）
+> 或手工/`--carve`/`--profile` 指定，逐项来源与门禁见该目录 README。
+
+1. **解密与 PE 重建**（`tools/ga-static-decrypt`，Python 实现）：
    ```powershell
-   dotnet run --project tools\ga-static-decrypt\ga-static-decrypt.csproj -c Release -- `
+   python tools\ga-static-decrypt\ga_static_decrypt.py `
      "E:\DMM\gakumas\GameAssembly.dll" `
-     "tools\ga-static-decrypt\out\GameAssembly_static_exact.dll" `
-     "<profileDir>"
+     "tools\ga-static-decrypt\out\GameAssembly_static_exact.dll"
+   # 密钥默认自动扫描（记录表/pass3/key/helper/payload）；手工输入与 profile 见该目录 README
    ```
 2. **部署 shim 并接管 interop 生成**（`tools/doorstop-shim`）：
    ```powershell
