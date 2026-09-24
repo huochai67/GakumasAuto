@@ -10,7 +10,7 @@ namespace GakumasAuto
 {
     public partial class AutoDriver : MonoBehaviour
     {
-        private const int MaxLayoutNodes = 500;
+        private const int MaxLayoutNodes = 3000;
         private const int MaxLayoutDepth = 12;
         private const int MaxFindMatches = 300;
         private const int MaxLayout2Nodes = 8000;

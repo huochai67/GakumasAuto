@@ -15,11 +15,18 @@ namespace GakumasAuto
     {
         private GameObject FindTarget(string path)
         {
+            var target = FindTargetInternal(path, true);
+            if (target != null) return target;
+            return FindTargetInternal(path, false);
+        }
+
+        private GameObject FindTargetInternal(string path, bool onlyActive)
+        {
             Transform root = FindRoot();
             if (root != null)
             {
-                var t = FindByName(root, path, true, "");
-                if (t == null) t = FindByName(root, path, false, "");
+                var t = FindByName(root, path, true, "", onlyActive);
+                if (t == null) t = FindByName(root, path, false, "", onlyActive);
                 if (t != null) return t;
             }
             var canvases = UnityEngine.Object.FindObjectsOfType<Canvas>();
@@ -27,8 +34,10 @@ namespace GakumasAuto
             {
                 foreach (var c in canvases)
                 {
-                    var t = FindByName(c.transform, path, true, "");
-                    if (t == null) t = FindByName(c.transform, path, false, "");
+                    if (c == null) continue;
+                    if (onlyActive && (!c.enabled || !c.gameObject.activeInHierarchy)) continue;
+                    var t = FindByName(c.transform, path, true, "", onlyActive);
+                    if (t == null) t = FindByName(c.transform, path, false, "", onlyActive);
                     if (t != null) return t;
                 }
             }
@@ -117,6 +126,11 @@ namespace GakumasAuto
                 if (uib != null) break;
                 go = go.transform.parent != null ? go.transform.parent.gameObject : null;
             }
+            if (cb == null && uib == null)
+            {
+                try { cb = target.GetComponentInChildren<Campus.Common.CampusButton>(); } catch { }
+                try { uib = target.GetComponentInChildren<Button>(); } catch { }
+            }
 
             if (cb != null)
             {
@@ -178,9 +192,21 @@ namespace GakumasAuto
                 clickCount = 1
             };
 
-            bool down = ExecuteEvents.Execute<IPointerDownHandler>(target, ped, ExecuteEvents.pointerDownHandler);
-            bool up = ExecuteEvents.Execute<IPointerUpHandler>(target, ped, ExecuteEvents.pointerUpHandler);
-            bool click = ExecuteEvents.Execute<IPointerClickHandler>(target, ped, ExecuteEvents.pointerClickHandler);
+            bool down = ExecuteEvents.ExecuteHierarchy<IPointerDownHandler>(target, ped, ExecuteEvents.pointerDownHandler);
+            bool up = ExecuteEvents.ExecuteHierarchy<IPointerUpHandler>(target, ped, ExecuteEvents.pointerUpHandler);
+            bool click = ExecuteEvents.ExecuteHierarchy<IPointerClickHandler>(target, ped, ExecuteEvents.pointerClickHandler);
+            if (!click && !down)
+            {
+                var results = new Il2CppSystem.Collections.Generic.List<RaycastResult>();
+                es.RaycastAll(ped, results);
+                if (results.Count > 0)
+                {
+                    var hit = results[0].gameObject;
+                    down = ExecuteEvents.ExecuteHierarchy<IPointerDownHandler>(hit, ped, ExecuteEvents.pointerDownHandler);
+                    up = ExecuteEvents.ExecuteHierarchy<IPointerUpHandler>(hit, ped, ExecuteEvents.pointerUpHandler);
+                    click = ExecuteEvents.ExecuteHierarchy<IPointerClickHandler>(hit, ped, ExecuteEvents.pointerClickHandler);
+                }
+            }
 
             log.LogInfo($"TAP: {target.name} pos={pos.x:F0},{pos.y:F0} down={down} up={up} click={click}");
             return $"tapped {target.name}: down={down} up={up} click={click}";
@@ -260,9 +286,14 @@ namespace GakumasAuto
             if (target == null) return $"not found: {path}";
 
             var cb = target.GetComponent<Campus.Common.CampusButton>();
+            var btn = target.GetComponent<Button>();
+            if (cb == null && btn == null)
+            {
+                try { cb = target.GetComponentInChildren<Campus.Common.CampusButton>(); } catch { }
+                try { btn = target.GetComponentInChildren<Button>(); } catch { }
+            }
             if (cb == null)
             {
-                var btn = target.GetComponent<Button>();
                 if (btn != null)
                 {
                     btn.onClick.Invoke();
@@ -369,9 +400,15 @@ namespace GakumasAuto
         // Path-aware node search. A query containing '/' matches the full node path
         // (exact or suffix, e.g. "HomeFooter/UIContentArea/FrontRoot/ButtonRoot/Home");
         // a bare name keeps the old exact-then-substring name matching.
-        private GameObject FindByName(Transform t, string query, bool exact, string parentPath)
+        private GameObject FindByName(Transform t, string query, bool exact, string parentPath, bool onlyActive)
         {
             if (t == null) return null;
+            if (onlyActive)
+            {
+                bool act = true;
+                try { act = t.gameObject.activeInHierarchy; } catch { }
+                if (!act) return null;
+            }
             string name = t.name ?? "?";
             string path = parentPath.Length == 0 ? name : parentPath + "/" + name;
             if (query.IndexOf('/') >= 0)
@@ -392,7 +429,7 @@ namespace GakumasAuto
                 try { child = t.GetChild(i); } catch { }
                 if (child != null)
                 {
-                    var hit = FindByName(child, query, exact, path);
+                    var hit = FindByName(child, query, exact, path, onlyActive);
                     if (hit != null) return hit;
                 }
             }

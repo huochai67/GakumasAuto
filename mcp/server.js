@@ -680,7 +680,14 @@ async function toolGiftReceive(args) {
         await sendCommand("gift_enter");
         await sleep(1500);
     }
-    return sendCommand("gift_receive", { gift_id: args.gift_id || "" });
+    const res = await sendCommand("gift_receive", { gift_id: args.gift_id || "" });
+    await sleep(1000);
+    try {
+        await sendCommand("invoke_callback", {
+            path: "Canvas/UIContentArea/SheetMoveRoot/SheetRoot/Buttons/CancelButton"
+        });
+    } catch {}
+    return res;
 }
 
 async function toolMissionReceive() {
@@ -812,7 +819,7 @@ async function toolExchangeBuy(args) {
     if (item.exchangeLimit > 0 && item.exchangedCount >= item.exchangeLimit) throw err("LIMIT_REACHED", `item ${item.id} limit reached`);
 
     const lay = await readLayout();
-    const cells = (lay.nodes || []).filter((n) =>
+    let cells = (lay.nodes || []).filter((n) =>
         n.active &&
         (n.name.includes("ExchangeItemMixGridListCell") ||
             n.name.includes("ExchangeProductMenuListCell") ||
@@ -820,9 +827,29 @@ async function toolExchangeBuy(args) {
             n.name.includes("ProductMenuListCell")) &&
         !(n.path || "").includes("SizeCacheRoot")
     );
-    if (!cells.length) throw err("EXCHANGE_CELLS_NOT_FOUND", "exchange product cells not found");
-    const cell = cells[Math.min(idx, cells.length - 1)];
-    await sendCommand("tap_at", { x: cell.sx, y: cell.sy });
+    let cellPath = null;
+    let cellSx = null, cellSy = null;
+    if (cells.length > 0) {
+        const cell = cells[Math.min(idx, cells.length - 1)];
+        cellSx = cell.sx;
+        cellSy = cell.sy;
+        cellPath = cell.path;
+    } else {
+        const found = await toolFind({ pattern: "ExchangeItemMixGridListCell" });
+        const activeMatches = (found && found.matches || []).filter((m) => m.active && !(m.path || "").includes("SizeCacheRoot"));
+        if (!activeMatches.length) throw err("EXCHANGE_CELLS_NOT_FOUND", "exchange product cells not found in layout or find");
+        const match = activeMatches[Math.min(idx, activeMatches.length - 1)];
+        cellPath = match.path;
+    }
+
+    if (cellSx == null || cellSy == null) {
+        const col = idx % 4;
+        const row = Math.floor(idx / 4);
+        cellSx = 75 + col * 130;
+        cellSy = 660 - row * 140;
+    }
+    await sendCommand("tap_at", { x: cellSx, y: cellSy });
+
     const sheet = await waitForNode(
         (n) => n.active && (n.name.includes("Confirm") || n.name.includes("Sheet")),
         15000, "exchange confirm sheet"
@@ -832,6 +859,13 @@ async function toolExchangeBuy(args) {
     if (!exec) throw err("BUY_BUTTON_NOT_FOUND", `confirm button not found on ${sheet && sheet.name}`);
     await sendCommand("invoke_callback", { path: exec.path });
     await sleep(2000);
+
+    try {
+        await sendCommand("invoke_callback", {
+            path: "Canvas/UIContentArea/SheetMoveRoot/SheetRoot/Buttons/CancelButton"
+        });
+    } catch {}
+
     return { status: "purchased", item: { id: item.id, name: item.name, price: item.price } };
 }
 
@@ -1636,7 +1670,28 @@ async function main() {
     }
 }
 
-main().catch((e) => {
-    log("fatal:", e.message);
-    process.exit(1);
-});
+async function callTool(name, args = {}) {
+    const impl = TOOL_IMPL[name];
+    if (!impl) {
+        const err = new Error(`unknown tool: ${name}`);
+        err.code = -32601;
+        throw err;
+    }
+    return await impl(args);
+}
+
+if (require.main === module) {
+    main().catch((e) => {
+        log("fatal:", e.message);
+        process.exit(1);
+    });
+}
+
+module.exports = {
+    callTool,
+    handleCall,
+    handleRequest,
+    TOOL_IMPL,
+    TOOLS,
+    sendCommand,
+};

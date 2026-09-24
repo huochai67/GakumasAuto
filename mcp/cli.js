@@ -65,7 +65,12 @@ async function main() {
     const resp = await send(action, extra);
     const out = resp.result !== undefined ? resp.result : resp;
     process.stdout.write(typeof out === "string" ? out + "\n" : JSON.stringify(out, null, 2) + "\n");
-    if (!resp.ok) process.exit(1);
+    if (!resp.ok) {
+        if (typeof out === "string" && out.startsWith("unknown action:")) {
+            process.stderr.write(`(Note: "${action}" may be an MCP orchestration tool. Try: node mcp/tool.js ${action})\n`);
+        }
+        process.exit(1);
+    }
 }
 
 main().catch((e) => {

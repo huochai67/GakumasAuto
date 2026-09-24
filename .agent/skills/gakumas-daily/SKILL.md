@@ -9,7 +9,7 @@ description: >
 
 # Gakumas daily (KAA parity, MCP + plugin)
 
-Drive the live game with **gakumas MCP tools**. If MCP is stale, `node mcp/cli.js <action> [key=value]`.
+Drive the live game with **gakumas MCP tools** or directly via Node `node mcp/tool.js <tool> [key=value]`. For raw plugin file-channel commands, use `node mcp/cli.js <action>`.
 
 Do not relaunch `gakumas.exe` from this agent terminal. If the game is down, ask the user to start it in a normal CMD.
 

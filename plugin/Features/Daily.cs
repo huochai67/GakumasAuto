@@ -48,7 +48,7 @@ namespace GakumasAuto
                 var works = Campus.Common.User.UserDataManager.UserWorkList;
                 if (works != null)
                 {
-                    long now = DateTimeOffset.UtcNow.ToUnixTimeSeconds();
+                    long nowMs = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds();
                     var types = new[]
                     {
                         Campus.Common.Proto.Client.Enums.WorkType.MiniLive,
@@ -80,7 +80,14 @@ namespace GakumasAuto
                             }
                             else
                             {
-                                w.state = works.IsWorking(wt) ? "Working" : "Completed";
+                                try
+                                {
+                                    w.state = uw.GetStateType().ToString();
+                                }
+                                catch
+                                {
+                                    w.state = works.IsWorking(wt) ? "Working" : "Completed";
+                                }
                                 w.characterId = uw.CharacterId ?? "";
                                 w.level = uw.Level;
                                 w.durationMinutes = uw.DurationMinutes;
@@ -91,8 +98,8 @@ namespace GakumasAuto
                                 long finishAt = 0;
                                 try { finishAt = uw.GetFinishTime(); } catch { }
                                 if (finishAt <= 0)
-                                    finishAt = uw.StartedTime + uw.DurationMinutes * 60L;
-                                w.remainingSeconds = finishAt > now ? finishAt - now : 0;
+                                    finishAt = uw.StartedTime + uw.DurationMinutes * 60000L;
+                                w.remainingSeconds = finishAt > nowMs ? (finishAt - nowMs) / 1000L : 0;
                                 var master = uw.Work;
                                 if (master != null) w.name = master.Name ?? "";
                                 var ch = uw.GetCharacter();
