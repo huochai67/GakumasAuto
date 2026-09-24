@@ -36,7 +36,7 @@
   - **L1 动作**：绝对坐标点击、节点路径模拟、回调直调、ADV 剧情快进与自动选支。
   - **L2 数据**：账号资产、背包道具、任务进度、礼物列表、社团状态、竞技场排位、培育状态与日程、支援卡列表、考试手牌与牌堆全览。
   - **L3 任务**：界面路由跳转、日常外出与活动费、商店/兑换所购买、竞技场挑战与自动编成、社团求助/捐赠、硬币扭蛋、支援卡强化、考试打牌。
-- **全套逆向与 Interop 工具链**：提供针对 packed `GameAssembly.dll` 的离线多阶段解密/PE 重建工具（`ga-static-decrypt`）与基于 `LibCpp2IL` 的离线 Interop 生成器（`interop-gen`）。
+- **全套逆向与 Interop 工具链**：针对 packed `GameAssembly.dll` 的离线多阶段解密/PE 重建工具（`ga-static-decrypt`），以及把 interop 生成搬进游戏进程的 doorstop shim（`doorstop-shim`：现算 codereg 常量并交给 BepInEx 自身管线，游戏更新后无需离线生成器）。
 - **开箱即用的 Agent 技能体系**：内置 `.agent/skills/` 自动化技能，涵盖日常签到、考试打牌、竞技场、社团公会、硬币扭蛋等常用业务。
 
 ---
@@ -59,13 +59,13 @@ GakumasAuto/
 │   └── cli.js                  # 命令行直连调试工具（绕过 MCP 协议，直接向文件通道发指令）
 ├── tools/                      # 离线逆向与绑定生成工具链
 │   ├── ga-static-decrypt/      # packed GameAssembly 静态解密与 PE 重建工具
-│   └── interop-gen/            # 离线 Il2CppInterop 生成器（需解密 PE + global-metadata.dat）
+│   └── doorstop-shim/          # 进程内 interop 生成：注入 codereg 常量后交给 BepInEx（含 install.ps1）
 ├── gakumas-bepinex-kit/        # 部署脚本与参考文档
 │   ├── deploy.ps1              # 插件安全部署脚本（仅复制 DLL，不改动游戏基础环境）
 │   ├── BepInEx/config/         # BepInEx 推荐配置文件模板
 │   └── docs/
 │       ├── PLUGIN-DEV-GUIDE.md # 插件开发与 IL2CPP 避坑指南
-│       └── IMAGE-CONFORM-ACCEPTANCE.md # 路线 2（镜像规范化 / 去 interop-gen）验收标准
+│       └── IMAGE-CONFORM-ACCEPTANCE.md # 镜像规范化验收判据与实测记录
 ├── .agent/skills/              # 面向 AI Agent 的业务技能定义（Daily, Produce, Contest 等）
 ├── Directory.Build.props.example # 本地构建路径配置示例
 └── .mcp.example.json           # MCP 客户端配置示例
@@ -299,8 +299,8 @@ packed GameAssembly.dll (游戏盘上原始二进制)
        ▼ tools/ga-static-decrypt (需匹配版本的逆向 profile)
 GameAssembly_static_exact.dll (重建的标准 PE 分析镜像)
        │
-       ▼ tools/interop-gen (需 metadata + BepInEx unity-libs)
-BepInEx\interop\*.dll (生成强类型 C# 绑定)
+       ▼ tools/doorstop-shim (进程内注入 codereg 常量、指定生成输入)
+BepInEx\interop\*.dll (由 BepInEx 自身管线运行时生成)
 ```
 
 1. **解密与 PE 重建**（`tools/ga-static-decrypt`）：
@@ -310,17 +310,14 @@ BepInEx\interop\*.dll (生成强类型 C# 绑定)
      "tools\ga-static-decrypt\out\GameAssembly_static_exact.dll" `
      "<profileDir>"
    ```
-2. **生成 Interop 绑定**（`tools/interop-gen`）：
+2. **部署 shim 并接管 interop 生成**（`tools/doorstop-shim`）：
    ```powershell
-   dotnet run --project tools\interop-gen\GakumasInteropGen.csproj -c Release -- `
-     "E:\DMM\gakumas" `
-     "tools\ga-static-decrypt\out\GameAssembly_static_exact.dll" `
-     "E:\DMM\gakumas\gakumas_Data\il2cpp_data\Metadata\global-metadata.dat" `
-     "E:\DMM\gakumas\BepInEx\interop" `
-     "E:\DMM\gakumas\BepInEx\unity-libs"
+   powershell -NoProfile -ExecutionPolicy Bypass -File tools\doorstop-shim\install.ps1 `
+     -ImagePath tools\ga-static-decrypt\out\GameAssembly_static_exact.dll -EnableInteropUpdate
    ```
+   之后 BepInEx 每次启动自己判定 hash：仅当镜像 / `unity-libs` / 生成器版本变化时才重新生成（首次约 83 s）。
 
-> 长期方案（路线 2）：把解密镜像规范化到 stock LibCpp2IL 可直接解析，从而由 BepInEx 自行生成 interop 并退役 `tools/interop-gen`。验收标准见 `gakumas-bepinex-kit/docs/IMAGE-CONFORM-ACCEPTANCE.md`。
+> 镜像规范化的验收判据（AC-1…AC-8）与 2026-09-24 实测记录见 `gakumas-bepinex-kit/docs/IMAGE-CONFORM-ACCEPTANCE.md`。
 
 详细逆向约束与哈希校验机制参见各工具目录下的 `README.md`。
 

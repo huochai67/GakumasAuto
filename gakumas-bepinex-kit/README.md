@@ -23,8 +23,8 @@
 公开发布不携带 BepInEx 二进制。用户应先从官方渠道安装与游戏版本匹配的 BepInEx 6，再准备匹配的 interop：
 
 1. 用 `tools/ga-static-decrypt/` 和匹配版本 profile 重建 `GameAssembly_static_exact.dll`。
-2. 用 `tools/interop-gen/` 读取重建 PE、`global-metadata.dat` 和 Unity libs。
-3. 将 interop 放入目标 `BepInEx/interop/`，复制仓库中的 `BepInEx/config/BepInEx.cfg.example` 为目标 `BepInEx/config/BepInEx.cfg`，保持 `UpdateInteropAssemblies = false`。
+2. 用 `tools/doorstop-shim/install.ps1 -ImagePath <镜像> -EnableInteropUpdate` 部署 shim（改写 `doorstop_config.ini`、写 shim 配置与解密镜像副本，并把 `UpdateInteropAssemblies` 置为 `true`）。
+3. 启动一次游戏：BepInEx 在自己的管线里生成 `BepInEx/interop/`（首次约 83 s），此后按 hash 判定是否重新生成。
 4. 构建插件，然后运行 `deploy.ps1 -TargetDir <游戏目录> -PluginPath <GakumasAuto.dll>`。
 
 脚本只复制 `BepInEx/plugins/GakumasAuto.dll`，不会安装、覆盖或校验仓库内的 BepInEx 二进制快照。解密器和 interop 生成器的输入、版本约束和完整命令见各自 README。
@@ -35,7 +35,7 @@
 `BEPINEX_GAME_ASSEMBLY_PATH` 指向解密镜像、补上 LibCpp2IL 找不到的 `Il2CppCodeRegistration`
 （常量由扫描镜像现算，不硬编码版本），随后交回 BepInEx 自己的 `Doorstop.Entrypoint`。
 配合 `UpdateInteropAssemblies = true`，BepInEx 会在游戏更新后自行重新生成 `BepInEx/interop`，
-不必再跑 `ga-static-decrypt` + `interop-gen`。部署与回滚见该目录 README（`install.ps1` / `-Revert`）。
+不必再手工跑解密后的离线生成步骤。部署与回滚见该目录 README（`install.ps1` / `-Revert`）。
 
 > MCP 服务器在仓库根目录 `mcp/server.js`。运行时设置 `GAKUMAS_BEPINEX` 指向目标游戏的 `BepInEx` 目录。
 
@@ -98,7 +98,7 @@ Remove-Item 'E:\DMM\gakumas\BepInEx\plugins\GakumasAuto.dll' -Force
 
 ## 已知限制
 
-- interop 程序集与 **GameAssembly 版本绑定**：游戏更新后需用仓库里的 `tools/interop-gen/` 重跑离线生成器（输入必须是解密/重建后的 GameAssembly dump，不是盘上的 packed dll）；或改用 `tools/doorstop-shim/`，让 BepInEx 自己在首次启动时重新生成
+- interop 程序集与 **GameAssembly 版本绑定**：游戏更新后需先用 `tools/ga-static-decrypt/` 重新产出解密镜像（生成输入必须是解密/重建后的 GameAssembly，不是盘上的 packed dll），再用 `tools/doorstop-shim/install.ps1 -ImagePath <新镜像>` 接上；BepInEx 会在下次启动自行重新生成
 - BepInEx 不修改游戏文件；封号风险由使用者自担（进程内注入，AC 驱动未拦截但无法保证长期安全）
 - 插件 MonoBehaviour 方法禁止暴露托管类型（DTO/List/StringBuilder）签名——Il2CppInterop 会替换为 substitute 并导致调用异常；一律经插件类静态字段路由（详见 PLUGIN-DEV-GUIDE §限制）
 - layout 上限 500 节点/深度 12；主界面全量约 500+，超出部分截断（`find` 按需收敛）

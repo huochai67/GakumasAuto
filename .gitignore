@@ -16,7 +16,6 @@ TestResults/
 
 # local scratch
 _tmp_decompile/
-tools/interop-gen/out-static/
 tools/ga-static-decrypt/out/
 tools/ga-static-decrypt/profile/
 *.bak

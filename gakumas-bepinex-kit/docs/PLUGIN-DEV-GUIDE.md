@@ -285,6 +285,6 @@ Start-Process -FilePath 'E:\DMM\gakumas\gakumas.exe' -ArgumentList '/viewer_id=.
 游戏版本更新或 GameAssembly 重编后：
 1. 准备新的 packed `GameAssembly.dll`、`global-metadata.dat` 和匹配版本的解密 profile。
 2. 运行 `tools/ga-static-decrypt/`，生成并校验 `GameAssembly_static_exact.dll`。
-3. 运行 `tools/interop-gen/`，输入重建 PE、metadata 和 `BepInEx\unity-libs\`；命令见对应 README。
-4. 用生成结果替换目标 `BepInEx\interop\*` 和无换行的 `assembly-hash.txt`，保持 `UpdateInteropAssemblies = false`。
+3. 部署 `tools/doorstop-shim/`：`install.ps1 -ImagePath <新镜像> -EnableInteropUpdate`（细节见该目录 README）。
+4. 启动一次游戏：BepInEx 在自己的管线里生成并替换 `BepInEx\interop\*` 与 `assembly-hash.txt`（首次约 83 s）。
 5. 重编译全部插件，部署后重启游戏并检查日志。

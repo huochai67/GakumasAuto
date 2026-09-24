@@ -8,6 +8,8 @@ BepInEx 的 interop 生成（Cpp2IL + Il2CppInterop）就会失败，所以过�
 tools/ga-static-decrypt  →  tools/interop-gen  →  手工替换 BepInEx\interop\* 与 assembly-hash.txt
 ```
 
+（该离线生成器 `tools/interop-gen` 已删除，仅存于 git 历史。）
+
 本 shim 把这条链搬进游戏进程：doorstop 先加载 shim，shim 注入 codereg 常量并指好解密镜像，
 再交给 BepInEx 自己的 `Doorstop.Entrypoint`，于是 interop 由 BepInEx 运行时自行生成，更新后不再需要离线生成器。
 

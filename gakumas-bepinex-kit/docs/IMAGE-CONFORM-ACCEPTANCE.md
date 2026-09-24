@@ -2,7 +2,8 @@
 
 > 适用：Unity 6000.0.77f1 IL2CPP + BepInEx 6.0.0-be.785 + 离线解密（`tools/ga-static-decrypt`）
 > 目标：让 **stock LibCpp2IL** 直接解析解密镜像 → BepInEx 用自身管线生成 interop → 不再需要 `tools/interop-gen`、不再手工维护 codereg 常量、不改 loader
-> 状态基线：本文件的失败/成功特征均为 2026-09-24 实测（工具版本见 §5）
+> 状态（2026-09-24 起）：目标已用 `tools/doorstop-shim/` 达成——interop 由 BepInEx 运行时自行生成、codereg 常量改为每次现算、`tools/interop-gen` 已删除。
+> 实现方式是在进程内注入 codereg 常量（订阅 `OnRegistrationStructLocationFailure`），因此 **AC-1（无 hook 的 stock 解析）未达成**，其余判据保留为对照与回归记录。
 
 ## 1. 术语
 
@@ -140,7 +141,7 @@ Cpp2IL.exe --game-path <任意目录> --exe-name gakumas `
 | 解密静态镜像（2026-09-17 build） | `Hit backtrack limit of 185 modules` → `codereg: 0x0` → `Failed to find code registration` |
 | 运行时快照 `t0` / `t1000` | `Sequence contains no matching element`（更早阶段） |
 
-**当前 codereg 常量（2026-08 build，`tools/interop-gen` 内置）**：
+**2026-08 build 的 codereg 常量真值（原 `tools/interop-gen` 内置；该工具已删除，数值保留作对照）**：
 
 ```
 genericMethodPointersCount = 496142   RVA 0x90B56E0
@@ -181,10 +182,10 @@ Doorstop.Entrypoint.Start()               ← doorstop_config.ini target_assembl
 ## 7. 交付物清单
 
 1. `tools/libcpp2il-probe/`（net8 控制台，引用 `BepInEx\core\{LibCpp2IL,Cpp2IL.Core}.dll`；退出码 0 = 解析成功）。
-   临时替代做法：复制 `tools/interop-gen/Program.cs`，删掉 `InjectCodeRegFallback()` 调用并在 `Cpp2IlApi.InitializeLibCpp2Il(...)` 之后直接退出。
+   临时替代做法（原为复制 `tools/interop-gen/Program.cs`）已失效：该文件随工具一起删除，需要时从 git 历史取（删除前提交 `bcd7c91`）。
 2. `ga-static-decrypt --conform`（或 `tools/ga-conform/`）+ 真值推导脚本
 3. 一条命令跑完 AC-1…AC-7 的验收脚本（输出通过/失败表）
-4. `tools/interop-gen` 处置说明：路线 2 通过后降级为离线交叉校验或删除
+4. `tools/interop-gen` 处置：**已删除**（2026-09-24）。codereg 常量不再内置，改由 `tools/doorstop-shim/CodeRegScanner` 每次扫描镜像现算。
 
 ## 8. 非目标
 

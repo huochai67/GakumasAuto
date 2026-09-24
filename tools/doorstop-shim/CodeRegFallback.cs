@@ -67,7 +67,7 @@ namespace GakumasDoorstopShim
             }
         }
 
-        // Signature must match LibCpp2IL.LibCpp2IL.BinaryStructures... -> see tools/interop-gen/Program.cs
+        // Signature must match Il2CppBinary.Il2CppCodeRegistrationFailedHandler (LibCpp2IL 6.0.0-be.785)
         private static void OnRegistrationStructLocationFailure(
             Il2CppBinary binary,
             LibCpp2IL.Metadata.Il2CppMetadata metadata,

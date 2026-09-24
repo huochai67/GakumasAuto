@@ -20,7 +20,7 @@
 //
 // The decrypted image stores absolute virtual addresses (imageBase + RVA), so every
 // qword is normalized to an RVA before comparison; RVAs are what gets cached and
-// returned, matching tools/interop-gen.
+// returned.
 using System;
 using System.Collections.Generic;
 using System.Globalization;
