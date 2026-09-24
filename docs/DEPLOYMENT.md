@@ -23,44 +23,62 @@ BepInEx 与 doorstop 由使用者从官方渠道安装；本仓库只提供解�
 - Python 3.9+（仅解密器需要；stage-2b 的 body 解码要调用镜像内的 x64 helper，故必须 Windows）。
 - 首次生成 interop 需要 `BepInEx\unity-libs\`（Unity 6000.0.77 的 `*.zip` 或解包结果，离线即可）。
 
-## 3. 部署步骤
+## 3. 端到端部署流程
 
-### 3.1 构建插件
+完整的部署流程遵循依赖递进关系：**先解密并部署 Shim → 启动游戏生成 Interop 绑定程序集 → 编译并安全部署插件 → 配置 MCP 客户端**。
 
-```powershell
-dotnet build plugin\GakumasAuto.csproj -c Release
+```text
+步骤 1: 生成解密镜像 (ga-static-decrypt)
+   │
+   ▼
+步骤 2: 部署 Shim 并启用生成 (doorstop-shim install.ps1 -EnableInteropUpdate)
+   │
+   ▼
+步骤 3: 启动游戏，BepInEx 运行时生成 interop (耗时约 83s，产出 BepInEx\interop\*.dll)
+   │
+   ▼
+步骤 4: 编译插件 (dotnet build plugin，依赖刚生成的 interop 程序集)
+   │
+   ▼
+步骤 5: 安全部署插件 (deploy-plugin.ps1，校验环境完整性与 hash，执行原子备份与复制)
+   │
+   ▼
+步骤 6: 配置并启动 MCP 服务 (.mcp.json，对接 AI Agent 或本地 CLI 调试)
 ```
 
-### 3.2 生成解密镜像
+---
+
+### 3.1 步骤 1：生成解密镜像
+
+使用离线解密器将 packed `GameAssembly.dll` 重建为标准 PE 镜像：
 
 ```powershell
 python tools\ga-static-decrypt\ga_static_decrypt.py `
   X:\path\to\gakumas\GameAssembly.dll out\GameAssembly_static_exact.dll
 ```
 
-密钥默认自动扫描（记录表/码表/key/helper/payload/sbox）；也可用 `--dump`/`--carve`/`--profile`
-复用已捕获的输入。交付门禁用 `--expect`/`--expect-hash`/`--expect-records`。
-细节见 `tools/ga-static-decrypt/README.md`。
+> **说明**：密钥默认通过内存与特征算法自动扫描（记录表/码表/key/helper/payload/sbox）；亦可通过 `--dump`、`--carve` 或 `--profile` 复用已捕获的输入。交付门禁用 `--expect`/`--expect-hash`/`--expect-records` 校验，完整用法参见 `tools/ga-static-decrypt/README.md`。
 
-### 3.3 部署 shim，让 BepInEx 自己生成 interop
+### 3.2 步骤 2：部署 Shim 并接管 Interop 生成
+
+使用安装脚本将 Doorstop Shim 接入游戏加载链，并启用 Interop 自动更新：
 
 ```powershell
+# 建议先带 -DryRun 预览改动
 powershell -NoProfile -ExecutionPolicy Bypass -File tools\doorstop-shim\install.ps1 `
   -GameRoot 'X:\path\to\gakumas' `
-  -ImagePath '<3.2 产出的解密镜像>' `
+  -ImagePath 'out\GameAssembly_static_exact.dll' `
   -RestoreDoorstopProxy `
   -EnableInteropUpdate `
   -DryRun
 ```
 
-确认要改动的内容后去掉 `-DryRun` 重跑。脚本只写 `BepInEx\core\GakumasDoorstopShim.*`、
-`BepInEx\gakumas-decrypted\<镜像>`、`doorstop_config.ini`、`BepInEx\config\BepInEx.cfg`、`winhttp.dll`，
-并都留 `*.gakumas-shim.bak` 备份；安装后自动用 `host-probe` 自检，失败即 `exit 6`（避免「游戏能开、
-BepInEx 静默不加载」）。细节与回滚见 `tools/doorstop-shim/README.md`。
+确认无误后**去掉 `-DryRun`** 正式执行。
+脚本仅改动必要位置并均保留 `*.gakumas-shim.bak` 备份（包括 `BepInEx\core\GakumasDoorstopShim.*`、`BepInEx\gakumas-decrypted\<镜像>`、`doorstop_config.ini`、`BepInEx\config\BepInEx.cfg`、`winhttp.dll`）。安装完毕后脚本会自动调用 `host-probe` 进行无侵入宿主自检，若自检未通过将立即返回 `exit 6`，防止出现静默加载失败。
 
-### 3.4 首次启动游戏
+### 3.3 步骤 3：首次启动游戏生成 Interop 程序集
 
-在**独立的** PowerShell / CMD 里启动（不要从 agent 终端开子进程：登录参数会过期）：
+必须在**独立**的 PowerShell 或 CMD 窗口中启动游戏（禁止在 Agent 终端的子进程中运行，避免随会话结束被强制终止）：
 
 ```powershell
 Start-Process -FilePath 'X:\path\to\gakumas\gakumas.exe' `
@@ -68,13 +86,23 @@ Start-Process -FilePath 'X:\path\to\gakumas\gakumas.exe' `
   -WorkingDirectory 'X:\path\to\gakumas'
 ```
 
-首次启动日志出现 `Detected outdated interop assemblies, will regenerate them now`，约 83 s 生成
-`BepInEx\interop\`；之后每次启动 hash 命中，生成步骤 1 s 内空转结束。
+1. **观察生成过程**：首次启动时，`BepInEx\LogOutput.log` 会输出 `Detected outdated interop assemblies, will regenerate them now`。在 Shim 动态注入 codereg 常量后，BepInEx 自身管线开始执行 Cpp2IL 和 Il2CppInterop 生成（首次全量约 83 秒）。
+2. **生成完毕后关闭游戏**。
+3. **锁定配置**：生成完成后，打开 `BepInEx\config\BepInEx.cfg`，将 `[IL2CPP]` 节下的 `UpdateInteropAssemblies` 改回 `false`（后续插件部署脚本的前置检查项强依赖该值处于关闭状态；推荐基线配置可参考 `docs/BepInEx.cfg.example`）。
 
-生成完成后把 `BepInEx\config\BepInEx.cfg` 的 `UpdateInteropAssemblies` 置回 `false`（3.5 的前置检查
-要求它为 `false`）；`docs/BepInEx.cfg.example` 是推荐基线，含该值与日志、缓存等设置。
+### 3.4 步骤 4：构建插件
 
-### 3.5 部署插件
+在游戏生成完整的 `BepInEx\interop\*.dll` 之后编译插件（插件工程 `plugin/GakumasAuto.csproj` 直接引用游戏目录内的 interop 程序集）：
+
+```powershell
+dotnet build plugin\GakumasAuto.csproj -c Release
+```
+
+编译产物位于 `plugin\bin\Release\net6.0\GakumasAuto.dll`。
+
+### 3.5 步骤 5：安全部署插件
+
+使用仓库提供的部署脚本安装插件到游戏目录：
 
 ```powershell
 powershell -NoProfile -ExecutionPolicy Bypass -File tools\deploy-plugin.ps1 `
@@ -82,24 +110,25 @@ powershell -NoProfile -ExecutionPolicy Bypass -File tools\deploy-plugin.ps1 `
   -PluginPath '.\plugin\bin\Release\net6.0\GakumasAuto.dll'
 ```
 
-`-PluginPath` 省略时默认取 `..\plugin\bin\Release\net6.0\GakumasAuto.dll`（相对脚本位置）；
-`-VerifyOnly` 只校验目标目录完整性；脚本会先备份旧 DLL 到 `BepInEx\.gakumas-auto-backup-<时间戳>\`。
-前置检查包括 `BepInEx\core` 三个运行库、`BepInEx\interop` 三个程序集、`assembly-hash.txt`（32 位十六
-进制、无换行）以及 `UpdateInteropAssemblies = false`；缺任何一项即失败且不做任何改动。
+- `-PluginPath` 省略时默认自动定位至 `..\plugin\bin\Release\net6.0\GakumasAuto.dll`。
+- `-VerifyOnly` 可用于仅执行环境完整性校验，不复制文件。
+- **前置防护门禁**：脚本执行前会严格校验目标目录的 3 个 `BepInEx\core` 运行库、3 个关键 `BepInEx\interop` 程序集、32 位无换行的 `assembly-hash.txt`，以及 `UpdateInteropAssemblies = false`。若游戏正在运行或任一项不满足，脚本将拒绝改动并立即退出。
+- **自动备份**：部署成功前会自动将旧版本插件备份至 `BepInEx\.gakumas-auto-backup-<时间戳>\`。
 
-### 3.6 接入 MCP
+### 3.6 步骤 6：配置 MCP 客户端
 
+1. 复制配置文件模板：
+   ```powershell
+   Copy-Item .mcp.example.json .mcp.json
+   ```
+2. 修改 `.mcp.json` 中的 `GAKUMAS_BEPINEX` 路径指向实际的 `X:\path\to\gakumas\BepInEx`。
+3. 在 Agent 宿主（Claude Code、Cursor、Roo Code 等）中挂载后，即可通过标准 stdio 协议调用全部 57 个 MCP 工具。
+
+在不启动 Agent 的情况下，也可以随时使用本地命令行直连调试：
 ```powershell
-Copy-Item .mcp.example.json .mcp.json    # 按需修改 GAKUMAS_BEPINEX 指向 <GameRoot>\BepInEx
+node mcp\cli.js state             # 底层文件通道原始状态调试
+node mcp\tool.js <tool> [k=v]     # 高层 MCP 工具逻辑直接调用
 ```
-
-MCP 客户端即可看到 `gakumas` 服务（stdio，`node mcp/server.js`）。直连调试：
-
-```powershell
-node mcp\cli.js state            # 文件通道调试工具
-node mcp\tool.js <tool> [k=v]    # 直接调用 MCP 工具实现
-```
-
 ## 4. 验证
 
 1. `BepInEx\LogOutput.log`：插件版本已加载、`AutoDriver` 已附加，无 `DllNotFound`、无 interop 过期告警。

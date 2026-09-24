@@ -97,17 +97,17 @@ node mcp/tool.js find "ExecuteButton"
 
 涉及消耗虚拟资产的操作必须显式传入 `confirm: true`，防止意外消耗资源：
 
-- **消耗マニー/道具/体力**：
-  - `daily_set_outing`：确认派遣外出。
-  - `exchange_buy`：购买交换所道具。
-  - `pvp_challenge`：消耗每日竞技场门票。
-  - `club_request`：发起社团求助。
-  - `club_donate`：捐赠笔记。
+- **资产消耗操作清单**：
+  - `gift_receive`：一键领取礼物箱（需 `confirm: true` 确认入库）。
+  - `daily_set_outing`：确认派遣外出工作（マニー与体力消耗）。
+  - `exchange_buy`：购买交换所道具（マニー/AP 消耗）。
+  - `pvp_challenge`：消耗每日竞技场门票发起挑战。
+  - `club_request`：发起社团笔记求助。
+  - `club_donate`：向社团成员捐赠笔记。
   - `capsule_draw`：消耗扭蛋硬币抽卡。
   - `support_upgrade`：消耗强化点数升级支援卡。
   - `shop_buy_item`：钻石/礼包商店购买（严禁擅自消耗付费或免费宝石，仅限 `isFree: true` 商品）。
-- **确认原则**：若未传入 `confirm: true`，对应工具将以 Dry-run 模式运行或直接抛出 `CONFIRM_REQUIRED` 异常。
-
+- **确认原则**：若未传入 `confirm: true`，对应工具将以 Dry-run 模式返回预期变更说明，或直接抛出 `CONFIRM_REQUIRED` 异常终止执行。
 ---
 
 ## 5. 核心状态机与全局避坑准则
@@ -170,13 +170,21 @@ graph TD
 ## 7. 开发者与测试调试指南
 
 - **启动游戏**：
-  使用 DMM 授权命令启动游戏：
-  `X:\path\to\gakumas\gakumas.exe /viewer_id=<id> /open_id=<open_id> /pf_access_token=<token>`
+  必须在独立终端中通过 DMM 授权命令启动游戏（严禁在 Agent 子进程中启动）：
+  ```powershell
+  X:\path\to\gakumas\gakumas.exe /viewer_id=<id> /open_id=<open_id> /pf_access_token=<token>
+  ```
 - **重新编译插件**：
-  ```bash
+  ```powershell
   dotnet build plugin/GakumasAuto.csproj -c Release
   ```
 - **部署插件**：
-  在游戏关闭状态下，将 `plugin/bin/Release/net6.0/GakumasAuto.dll` 复制至 `X:\path\to\gakumas\BepInEx\plugins\GakumasAuto.dll`。
-- **日志观察**：
-  游戏运行日志位于 `X:\path\to\gakumas\BepInEx\LogOutput.log`。
+  推荐使用安全部署脚本（自动校验目标环境与备份旧文件）：
+  ```powershell
+  powershell -NoProfile -ExecutionPolicy Bypass -File .\tools\deploy-plugin.ps1 `
+    -TargetDir 'X:\path\to\gakumas' `
+    -PluginPath '.\plugin\bin\Release\net6.0\GakumasAuto.dll'
+  ```
+- **日志观测**：
+  - 游戏与插件运行日志：`X:\path\to\gakumas\BepInEx\LogOutput.log`
+  - Shim 引导与常量注入日志：`X:\path\to\gakumas\BepInEx\gakumas-shim.log`

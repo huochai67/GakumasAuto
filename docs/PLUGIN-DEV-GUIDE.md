@@ -1,8 +1,7 @@
 # gakumas 插件开发手册（BepInEx 6 / Il2CppInterop）
 
-> 适用：Unity 6000.0.77f1 IL2CPP + BepInEx 6.0.0-be.785 + 运行时 interop（仓库当前插件为 v2.2.1）
-> 前置：`tools/deploy-plugin.ps1` 已部署并验证（部署顺序见 `DEPLOYMENT.md`）；插件使用 .NET 6 SDK，解密器使用 .NET 8 SDK
-
+> 适用：Unity 6000.0.77f1 IL2CPP + BepInEx 6.0.0-be.785 + 运行时 interop（仓库当前插件为 v2.3.0）
+> 前置：根据 `docs/DEPLOYMENT.md` 完成环境配置与 interop 生成；插件与 Shim 工程目标框架为 `net6.0`（推荐使用 .NET 8 SDK 编译），静态解密器使用 Python 3.9+。
 ## 1. 架构总览
 
 ```
@@ -17,7 +16,7 @@ gakumas.exe (IL2CPP, 壳启动器自解压)
 关键点：
 - **游戏原始文件零改动**；全部新增物在游戏根 3 个文件 + `BepInEx\` 目录
 - 反作弊驱动只拦跨进程 RPM，进程内注入不受影响
-- interop 程序集是**离线预生成**的（`UpdateInteropAssemblies = false`），编译插件时直接引用 `BepInEx\interop\*.dll` 即可获得游戏全部类型
+- interop 程序集由 BepInEx 自身在首次启动时生成（通过 `tools/doorstop-shim` 注入 codereg 常量），生成后配置锁定 `UpdateInteropAssemblies = false`。编译插件时直接引用 `BepInEx\interop\*.dll` 即可获得游戏全部类型。
 
 ## 2. 插件骨架（最小可跑）
 
@@ -273,7 +272,7 @@ Start-Process -FilePath 'X:\path\to\gakumas\gakumas.exe' -ArgumentList '/viewer_
     "env": { "GAKUMAS_BEPINEX": "<game>/BepInEx" } } } }
 ```
 
-- **Tools（38，分四级）**：L0 感知、L1 动作、L2 编排、L3 任务；完整工具表以根目录 README 和 `mcp/server.js` 为准。
+- **Tools（57 个，分四级）**：L0 感知、L1 动作、L2 数据与查询、L3 业务与任务；完整工具表以根目录 README 和 `mcp/server.js` 为准。
 - **Resources（4）**：`gakumas://state`、`gakumas://layout`（缓存）、`gakumas://screen`（PNG base64）、`gakumas://log`（日志尾 200 行）。
 - 服务器职责：原子发布（临时文件+rename）、单飞写、id 配对、8s 超时 + 一次重试、`wait_until` 服务端轮询。
 - 延迟：常规动作 1–2s、截图 2–4s（插件约 1Hz 轮询 cmd）。

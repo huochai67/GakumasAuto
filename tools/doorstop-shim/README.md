@@ -170,7 +170,7 @@ powershell -NoProfile -ExecutionPolicy Bypass -File tools\doorstop-shim\install.
    **映射**（`replace failed: ... user-mapped section open`，改名/删除/截断都被拒）时，
    `install.ps1` 会退到 `BepInEx\core\shim\GakumasDoorstopShim.dll`，文件名不变、`doorstop_config.ini`
    同步指向新路径。shim 自己的依赖解析不受影响：`Entrypoint.ResolveFromCore` 始终按
-   `<GameRoot>\BepInEx\core` 解析（并同时backstop BepInEx 自身程序集的解析）。
+   `<GameRoot>\BepInEx\core` 解析（并同时 backstop 兜底 BepInEx 自身程序集的解析）。
 3. **shim 用了 MonoMod，就必须在移交前解开它的平台锁**。`MonoMod.Utils.PlatformHelper` 首次读取
    就把检测结果写进 `_current` 并把 `_currentLocked` 置 true，之后 `set_Current` 抛
    `Cannot set the value of PlatformHelper.Current once it has been accessed.`。

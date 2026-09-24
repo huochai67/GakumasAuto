@@ -85,7 +85,7 @@ Follow `gakumas-support`. `support_upgrade` `confirm:true` three times (list →
 
 Do not switch 期間限定 / ノーマル / アイドル unless asked.
 
-Live: Daily receivable 4→0 after ReceiveAll (マニー回収 / マニー交換 / コンテスト挑戦 / サポート強化). Weekly already 0.
+Observed runtime baseline: Daily receivable drops from 4 to 0 after ReceiveAll (covering マニー回収 / マニー交換 / コンテスト挑戦 / サポート強化 missions). Weekly may already be 0.
 
 ## 10. Report
 

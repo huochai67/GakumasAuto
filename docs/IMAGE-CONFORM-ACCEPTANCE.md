@@ -1,10 +1,8 @@
 # 路线 2 验收标准：镜像规范化（去 interop-gen）
 
-> 适用：Unity 6000.0.77f1 IL2CPP + BepInEx 6.0.0-be.785 + 离线解密（`tools/ga-static-decrypt`）
-> 目标：让 **stock LibCpp2IL** 直接解析解密镜像 → BepInEx 用自身管线生成 interop → 不再需要 `tools/interop-gen`、不再手工维护 codereg 常量、不改 loader
-> 状态（2026-09-24 起）：目标已用 `tools/doorstop-shim/` 达成——interop 由 BepInEx 运行时自行生成、codereg 常量改为每次现算、`tools/interop-gen` 已删除。
-> 实现方式是在进程内注入 codereg 常量（订阅 `OnRegistrationStructLocationFailure`），因此 **AC-1（无 hook 的 stock 解析）未达成**，其余判据保留为对照与回归记录。
-
+> **适用环境**：Unity 6000.0.77f1 IL2CPP + BepInEx 6.0.0-be.785 + 离线静态解密（`tools/ga-static-decrypt`）  
+> **演进目标**：让 **Stock LibCpp2IL**（未修改、无 hook）能够直接解析解密后的 PE 镜像，驱动 BepInEx 原生管线自动生成 interop，从而彻底废除离线生成器 `tools/interop-gen`，避免每次游戏更新人工维护硬编码 codereg 常量。  
+> **工程现状与实施结果（2026-09-24）**：该演进目标最终通过 **路线 1（`tools/doorstop-shim/` 进程内 Hook 注入）** 成功落地。`tools/doorstop-shim` 实现了运行时动态镜像扫描与常量注入，`tools/interop-gen` 现已正式移除。由于生产方案采用了 `OnRegistrationStructLocationFailure` 订阅机制，严格意义上的 **AC-1（无 Hook Stock 解析）在离线镜像中未达成**。本文档完整保留路线 2 的技术指标、验收判据（AC-1 ~ AC-8）与历史实测基准，作为逆向分析对照与质量回归规范。
 ## 1. 术语
 
 | 名称 | 含义 |

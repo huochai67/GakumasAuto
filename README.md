@@ -147,30 +147,44 @@ X:\path\to\gakumas\gakumas.exe /viewer_id=<user_id> /open_id=<open_id> /pf_acces
 
 ---
 
-## 命令行直连调试（CLI）
+## 命令行与调试工具
 
-无需通过 MCP 客户端，可使用 `mcp/cli.js` 直接向游戏发送命令验证通路：
+项目提供了两套独立的命令行调试工具，方便在不启动 Agent 或 MCP 宿主的情况下直接驱动与验证游戏通路：
 
+### 1. MCP 工具直调（`mcp/tool.js`，推荐）
+直接复用 MCP 服务端的参数校验、重试逻辑与高层任务编排：
 ```powershell
-# 查看游戏当前状态（界面、用户、Loading）
-node mcp/cli.js state
+# 列出所有已注册的 57 个 MCP 工具及其描述
+node mcp/tool.js
 
-# 查看当前账号资产与体力
-node mcp/cli.js account
+# 查询实时状态与账号资产
+node mcp/tool.js state
+node mcp/tool.js account
 
-# 截取当前画面（保存为 BepInEx/gakumas-screen.png）
-node mcp/cli.js screenshot
+# 截取当前游戏画面（存为 BepInEx/gakumas-screen.png）
+node mcp/tool.js screenshot
 
-# 查找包含指定名称的 UI 节点
-node mcp/cli.js find pattern=HomeFooter
+# 界面导航与跳转
+node mcp/tool.js screen_goto home
+node mcp/tool.js screen_goto pvp
 
-# 模拟点击主页底部按钮
-node mcp/cli.js invoke_callback "path=HomeFooter/UIContentArea/FrontRoot/ButtonRoot/Home"
-
-# 快捷返回主界面
-node mcp/cli.js go_home
+# 执行高层业务（支持 key=val 传参，需确认的操作传入 confirm=true）
+node mcp/tool.js daily_collect_money
+node mcp/tool.js pvp_challenge rival=low confirm=true
 ```
 
+### 2. 底层指令通道直连（`mcp/cli.js`）
+绕过 MCP 逻辑层，直接向游戏插件的文件通道（`gakumas-ui-cmd.json`）投递原始原子指令：
+```powershell
+# 查看插件原始状态响应
+node mcp/cli.js state
+
+# 全 Canvas 搜索 UI 节点
+node mcp/cli.js find pattern=HomeFooter
+
+# 直接触发节点回调
+node mcp/cli.js invoke_callback "path=HomeFooter/UIContentArea/FrontRoot/ButtonRoot/Home"
+```
 ### 游戏内热键
 
 | 快捷键 | 功能 | 说明 |
