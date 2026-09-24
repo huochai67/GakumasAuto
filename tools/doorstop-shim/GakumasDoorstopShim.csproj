@@ -1,0 +1,57 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <!--
+    Doorstop target for gakumas (BepInEx 6 / IL2CPP).
+
+    Doorstop loads this assembly inside the game process and invokes
+    `static void Doorstop.Entrypoint.Start()`. The shim:
+      1. resolves BepInEx\core\LibCpp2IL.dll and subscribes to
+         Il2CppBinary.OnRegistrationStructLocationFailure,
+      2. derives the Il2CppCodeRegistration constants by scanning the decrypted
+         image (no per-version hardcoded RVAs),
+      3. optionally points BEPINEX_GAME_ASSEMBLY_PATH at that image,
+      4. hands over to BepInEx's own Doorstop.Entrypoint.Start(), so BepInEx
+         generates BepInEx\interop itself.
+
+    OutputType=Exe exists only for the offline self-test (scan / hook-test modes);
+    the CLR entry point is never used when doorstop loads this assembly.
+  -->
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <TargetFramework>net6.0</TargetFramework>
+    <ImplicitUsings>disable</ImplicitUsings>
+    <Nullable>disable</Nullable>
+    <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
+    <LangVersion>10.0</LangVersion>
+    <AssemblyName>GakumasDoorstopShim</AssemblyName>
+    <RootNamespace>GakumasDoorstopShim</RootNamespace>
+    <StartupObject>GakumasDoorstopShim.SelfTest</StartupObject>
+    <InvariantGlobalization>true</InvariantGlobalization>
+    <!-- target net6.0 to match BepInEx's bundled runtime; EOL warning is expected -->
+    <CheckEolTargetFramework>false</CheckEolTargetFramework>
+    <DebugType>none</DebugType>
+    <!-- ship a single file; resolved from BepInEx\core at runtime, never copied -->
+    <AppendTargetFrameworkToOutputPath>false</AppendTargetFrameworkToOutputPath>
+    <GakumasRoot Condition="'$(GakumasRoot)' == ''">E:\DMM\gakumas</GakumasRoot>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <Reference Include="LibCpp2IL">
+      <HintPath>$(GakumasRoot)\BepInEx\core\LibCpp2IL.dll</HintPath>
+      <Private>false</Private>
+    </Reference>
+    <Reference Include="MonoMod.RuntimeDetour">
+      <HintPath>$(GakumasRoot)\BepInEx\core\MonoMod.RuntimeDetour.dll</HintPath>
+      <Private>false</Private>
+    </Reference>
+  </ItemGroup>
+
+  <!-- host-probe is its own project inside this directory; keep its sources and generated
+       assembly attributes out of the shim binary (otherwise CS0579 duplicate attributes). -->
+  <ItemGroup>
+    <Compile Remove="host-probe\**" />
+    <None Remove="host-probe\**" />
+    <EmbeddedResource Remove="host-probe\**" />
+  </ItemGroup>
+
+</Project>

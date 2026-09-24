@@ -63,7 +63,9 @@ GakumasAuto/
 ├── gakumas-bepinex-kit/        # 部署脚本与参考文档
 │   ├── deploy.ps1              # 插件安全部署脚本（仅复制 DLL，不改动游戏基础环境）
 │   ├── BepInEx/config/         # BepInEx 推荐配置文件模板
-│   └── docs/PLUGIN-DEV-GUIDE.md# 插件开发与 IL2CPP 避坑指南
+│   └── docs/
+│       ├── PLUGIN-DEV-GUIDE.md # 插件开发与 IL2CPP 避坑指南
+│       └── IMAGE-CONFORM-ACCEPTANCE.md # 路线 2（镜像规范化 / 去 interop-gen）验收标准
 ├── .agent/skills/              # 面向 AI Agent 的业务技能定义（Daily, Produce, Contest 等）
 ├── Directory.Build.props.example # 本地构建路径配置示例
 └── .mcp.example.json           # MCP 客户端配置示例
@@ -317,6 +319,8 @@ BepInEx\interop\*.dll (生成强类型 C# 绑定)
      "E:\DMM\gakumas\BepInEx\interop" `
      "E:\DMM\gakumas\BepInEx\unity-libs"
    ```
+
+> 长期方案（路线 2）：把解密镜像规范化到 stock LibCpp2IL 可直接解析，从而由 BepInEx 自行生成 interop 并退役 `tools/interop-gen`。验收标准见 `gakumas-bepinex-kit/docs/IMAGE-CONFORM-ACCEPTANCE.md`。
 
 详细逆向约束与哈希校验机制参见各工具目录下的 `README.md`。
 

@@ -16,9 +16,20 @@ internal static partial class Program
 
     static int Main(string[] args)
     {
+        var stage1Only = false;
+        {
+            var keep = new System.Collections.Generic.List<string>(args.Length);
+            foreach (var a in args)
+            {
+                if (a == "--stage1") stage1Only = true;
+                else keep.Add(a);
+            }
+            args = keep.ToArray();
+        }
+
         if (args.Length < 3 || args[0] is "-h" or "--help")
         {
-            Console.WriteLine("usage: ga-static-decrypt <packed.dll> <out.dll> <profileDir> [reference.dump]");
+            Console.WriteLine("usage: ga-static-decrypt <packed.dll> <out.dll> <profileDir> [reference.dump] [--stage1]");
             return args.Length > 0 ? 0 : 2;
         }
         var packedPath = Path.GetFullPath(args[0]);
@@ -87,6 +98,18 @@ internal static partial class Program
                     throw new InvalidDataException($"tail copy out of range: 0x{tail:X} bytes");
                 Buffer.BlockCopy(file, tsrc, image, tdst, tail);
                 Console.WriteLine("[dec] tail memcpy 0x{0:X} bytes -> RVA 0x{1:X}", tail, tdst);
+            }
+
+            if (stage1Only)
+            {
+                // Stage 1 only: outer-layer decryption + section mapping. Skips the per-build stage-2
+                // profile (body records, stream decode, six-section PE reconstruction). Exists to test
+                // what downstream consumers (codereg scan, LibCpp2IL / Il2CppInterop) actually need.
+                WriteOutput(outPath, image, image.Length);
+                Console.WriteLine("[out] stage1 only: {0} ({1:N0} bytes)", outPath, image.Length);
+                Console.WriteLine("[warn] this is a packed-layout skeleton (~99.5% zeros): the method tables and");
+                Console.WriteLine("[warn] code/data records are not materialized, so codereg scan and LibCpp2IL reject it.");
+                return 0;
             }
 
             ApplyStage2SelfDecrypt(image);

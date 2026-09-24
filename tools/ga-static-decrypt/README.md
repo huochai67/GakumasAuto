@@ -37,8 +37,12 @@ dotnet run --project tools\ga-static-decrypt\ga-static-decrypt.csproj -c Release
 Optional fourth argument: a loader-decrypted reference dump. It is used only for comparison and is not needed to decrypt.
 
 ```text
-ga-static-decrypt <packed.dll> <out.dll> <profileDir> [reference.dump]
+ga-static-decrypt <packed.dll> <out.dll> <profileDir> [reference.dump] [--stage1]
 ```
+
+`--stage1` stops after the outer-layer decryption (~1 s, only ~0.9 MB written) and is for diagnosis/comparison only:
+that image is a packed-layout skeleton (99.5% zero bytes, `.data` entirely empty), the `genericMethodPointers` tables
+are not materialized, and both `CodeRegScanner` and LibCpp2IL reject it — it is **not** a valid generator input.
 
 Validated result for the current profile:
 
