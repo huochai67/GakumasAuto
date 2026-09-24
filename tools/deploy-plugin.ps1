@@ -1,12 +1,13 @@
-﻿# deploy.ps1 — GakumasAuto 插件部署脚本（不捆绑 BepInEx）
+﻿# deploy-plugin.ps1 — GakumasAuto 插件部署脚本（不捆绑 BepInEx）
 # 用法：
-#   powershell -NoProfile -ExecutionPolicy Bypass -File deploy.ps1
-#   powershell -NoProfile -ExecutionPolicy Bypass -File deploy.ps1 -TargetDir <游戏目录>
-#   powershell -NoProfile -ExecutionPolicy Bypass -File deploy.ps1 -PluginPath <GakumasAuto.dll>
-#   powershell -NoProfile -ExecutionPolicy Bypass -File deploy.ps1 -TargetDir <目录> -VerifyOnly
+#   powershell -NoProfile -ExecutionPolicy Bypass -File tools\deploy-plugin.ps1
+#   powershell -NoProfile -ExecutionPolicy Bypass -File tools\deploy-plugin.ps1 -TargetDir <游戏目录>
+#   powershell -NoProfile -ExecutionPolicy Bypass -File tools\deploy-plugin.ps1 -PluginPath <GakumasAuto.dll>
+#   powershell -NoProfile -ExecutionPolicy Bypass -File tools\deploy-plugin.ps1 -TargetDir <目录> -VerifyOnly
 #
 # 前置：用户已从官方渠道安装与游戏版本匹配的 BepInEx 6、Il2CppInterop 和 interop 程序集。
 # 本脚本只复制 GakumasAuto.dll，不安装或覆盖 BepInEx、doorstop、interop、Unity libs 或游戏文件。
+# 完整部署顺序见 docs\DEPLOYMENT.md。
 param(
     [string]$TargetDir = "E:\DMM\gakumas",
     [string]$PluginPath = "",
@@ -15,9 +16,9 @@ param(
 )
 
 $ErrorActionPreference = "Stop"
-$KitRoot = Split-Path -Parent $MyInvocation.MyCommand.Path
+$ScriptDir = Split-Path -Parent $MyInvocation.MyCommand.Path
 if ([string]::IsNullOrWhiteSpace($PluginPath)) {
-    $PluginPath = Join-Path $KitRoot "..\plugin\bin\Release\net6.0\GakumasAuto.dll"
+    $PluginPath = Join-Path $ScriptDir "..\plugin\bin\Release\net6.0\GakumasAuto.dll"
 }
 $TargetDir = [IO.Path]::GetFullPath($TargetDir)
 $PluginPath = [IO.Path]::GetFullPath($PluginPath)

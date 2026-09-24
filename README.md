@@ -57,15 +57,15 @@ GakumasAuto/
 ├── mcp/                        # MCP 服务端与调试工具
 │   ├── server.js               # MCP 服务器实现（57 个 Tools + 4 个 Resources）
 │   └── cli.js                  # 命令行直连调试工具（绕过 MCP 协议，直接向文件通道发指令）
-├── tools/                      # 离线逆向与绑定生成工具链
+├── tools/                      # 逆向、interop 与部署工具链
 │   ├── ga-static-decrypt/      # packed GameAssembly 静态解密与 PE 重建工具
-│   └── doorstop-shim/          # 进程内 interop 生成：注入 codereg 常量后交给 BepInEx（含 install.ps1）
-├── gakumas-bepinex-kit/        # 部署脚本与 BepInEx 参考配置
-│   ├── deploy.ps1              # 插件安全部署脚本（仅复制 DLL，不改动游戏基础环境）
-│   └── BepInEx/config/         # BepInEx 推荐配置文件模板
+│   ├── doorstop-shim/          # 进程内 interop 生成：注入 codereg 常量后交给 BepInEx（含 install.ps1）
+│   └── deploy-plugin.ps1       # 插件安全部署脚本（仅复制 DLL，不改动游戏基础环境）
 ├── docs/                       # 参考文档
+│   ├── DEPLOYMENT.md           # 部署、验证、更新与回滚流程
 │   ├── PLUGIN-DEV-GUIDE.md     # 插件开发与 IL2CPP 避坑指南
-│   └── IMAGE-CONFORM-ACCEPTANCE.md # 镜像规范化验收判据与实测记录
+│   ├── IMAGE-CONFORM-ACCEPTANCE.md # 镜像规范化验收判据与实测记录
+│   └── BepInEx.cfg.example     # BepInEx 推荐配置基线
 ├── .agent/skills/              # 面向 AI Agent 的业务技能定义（Daily, Produce, Contest 等）
 ├── Directory.Build.props.example # 本地构建路径配置示例
 └── .mcp.example.json           # MCP 客户端配置示例
@@ -103,7 +103,7 @@ GakumasAuto/
 3. **部署插件**：
    使用提供的部署脚本将生成的 DLL 安装到游戏的 `BepInEx\plugins` 目录：
    ```powershell
-   powershell -NoProfile -ExecutionPolicy Bypass -File .\gakumas-bepinex-kit\deploy.ps1 `
+   powershell -NoProfile -ExecutionPolicy Bypass -File .\tools\deploy-plugin.ps1 `
      -TargetDir 'E:\DMM\gakumas' `
      -PluginPath '.\plugin\bin\Release\net6.0\GakumasAuto.dll'
    ```
@@ -190,8 +190,8 @@ node mcp/cli.js go_home
 | 工具名称 | 参数 | 说明 |
 |---|---|---|
 | `state` | — | 读取游戏实时状态：用户 ID/昵称、当前界面识别（`screen`）、顶层弹窗（`topLayer`）、Loading 与维护状态 |
-| `layout` | `includeInactive?: bool` | 获取当前 UI 树结构（最多 500 节点 / 深度 12，含屏幕坐标、尺寸、文本与激活状态） |
-| `layout2` | `includeInactive?: bool` | 获取紧凑型完整 UI 树文本（无 500 节点上限，适合长列表/深层界面解析） |
+| `layout` | `includeInactive?: bool` | 获取当前 UI 树结构（最多 3000 节点 / 深度 12，含屏幕坐标、尺寸、文本与激活状态） |
+| `layout2` | `includeInactive?: bool` | 获取紧凑型完整 UI 树文本（无节点/深度上限，适合长列表/深层界面解析） |
 | `find` | `pattern: string` | 按子串模糊搜索节点（全 Canvas 范围，最多返回 300 个匹配节点及其路径） |
 | `screenshot` | — | 游戏内调用 `ScreenCapture` 捕获画面为 PNG（返回保存路径与尺寸） |
 | `debug_button` | `path: string` | 检查指定按钮节点的交互状态与回调函数绑定情况 |

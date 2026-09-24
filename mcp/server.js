@@ -889,7 +889,7 @@ const TOOLS = [
     },
     {
         name: "layout",
-        description: "[L0] Current screen UI tree (up to 500 nodes): name/path/screen coords/size/active/flags/text.",
+        description: "[L0] Current screen UI tree (up to 3000 nodes): name/path/screen coords/size/active/flags/text.",
         inputSchema: {
             type: "object",
             properties: { includeInactive: { type: "boolean", description: "Keep inactive nodes (default true)" } },
@@ -897,7 +897,7 @@ const TOOLS = [
     },
     {
         name: "layout2",
-        description: "[L0] Compact complete UI tree (no 500/depth-12 cap). Lines: indent +/- name [#B|#U|#X] [sx,sy wxh] [\"text\"]. +active -inactive #B CampusButton #U uGUI #X not-interactable. Reconstruct path by joining ancestor names.",
+        description: "[L0] Compact complete UI tree (no node/depth cap). Lines: indent +/- name [#B|#U|#X] [sx,sy wxh] [\"text\"]. +active -inactive #B CampusButton #U uGUI #X not-interactable. Reconstruct path by joining ancestor names.",
         inputSchema: {
             type: "object",
             properties: { includeInactive: { type: "boolean", description: "Keep inactive nodes (default true)" } },

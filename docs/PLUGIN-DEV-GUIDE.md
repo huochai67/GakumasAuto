@@ -1,7 +1,7 @@
 # gakumas 插件开发手册（BepInEx 6 / Il2CppInterop）
 
-> 适用：Unity 6000.0.77f1 IL2CPP + BepInEx 6.0.0-be.785 + 离线 interop（部署快照中的插件为 v2.0.2；仓库根目录当前插件为 v2.2.1）
-> 前置：`deploy.ps1` 已部署并验证；插件使用 .NET 6 SDK，解密器和 interop 生成器使用 .NET 8 SDK
+> 适用：Unity 6000.0.77f1 IL2CPP + BepInEx 6.0.0-be.785 + 运行时 interop（仓库当前插件为 v2.2.1）
+> 前置：`tools/deploy-plugin.ps1` 已部署并验证（部署顺序见 `DEPLOYMENT.md`）；插件使用 .NET 6 SDK，解密器使用 .NET 8 SDK
 
 ## 1. 架构总览
 
@@ -69,7 +69,7 @@ gakumas.exe (IL2CPP, 壳启动器自解压)
 </Project>
 ```
 
-参考样例：`samples/GakumasAuto/`（合并版插件：UI 交互 + ADV 自动化 + MCP 结构化回传）。
+参考实现：`plugin/`（主插件：UI 交互 + 业务模块 + MCP 结构化回传）。
 截图动作需要额外引用：`UnityEngine.ScreenCaptureModule` + `UnityEngine.ImageConversionModule`（`BepInEx\interop\` 下同名 dll）；
 ADV 需要 `ADV.Runtime` + `Uguiss.Runtime` + `Uguiss-Timeline.Runtime`。
 
@@ -197,7 +197,7 @@ engine.Branch.ChoiceCount / SelectUnselectedChoices()   // 自动选分支
 ### 4.3 布局捕获
 
 - F10 手动 / 屏幕顶层 layer 变化自动 / `layout` 动作
-- 输出：GameObject 树，每节点 `名称 rect(anchoredPosition, size) [inactive] [CampusButton] [UIButton] [not-interactable] [TMP:"文本"]`，上限 500 节点 / 深度 12
+- 输出：GameObject 树，每节点 `名称 rect(anchoredPosition, size) [inactive] [CampusButton] [UIButton] [not-interactable] [TMP:"文本"]`，上限 3000 节点 / 深度 12
 - **RectTransform 获取必须用 `t.GetComponent<RectTransform>()`**——`t as RectTransform` 转型在 interop 下恒返回 null（rect 全零）；size 读 `rt.rect`，≤0 时回退 `rt.sizeDelta`
 - 按钮识别：`Campus.Common.CampusButton`（游戏按钮体系）+ `UnityEngine.UI.Button`（uGUI 原生）+ TMP_Text/Text 文本内容
 - 屏幕坐标：`RectTransformUtility.WorldToScreenPoint(cam, rt.position)`（overlay canvas 传 null camera）
@@ -217,7 +217,7 @@ engine.Branch.ChoiceCount / SelectUnselectedChoices()   // 自动选分支
 
 # 只部署插件，不覆盖 BepInEx 或 interop
 powershell -NoProfile -ExecutionPolicy Bypass -File `
-  <repo>\gakumas-bepinex-kit\deploy.ps1 `
+  <repo>\tools\deploy-plugin.ps1 `
   -TargetDir 'E:\DMM\gakumas' `
   -PluginPath '<插件目录>\bin\Release\net6.0\<插件名>.dll'
 ```
